@@ -1,0 +1,186 @@
+@import './App.css';
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #0284c7;
+
+  /* Light Theme */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #1e293b;
+  --bg-sidebar-hover: #334155;
+  --bg-header: #1e293b;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #f8fafc;
+  --border-color: #e2e8f0;
+  --input-bg: #ffffff;
+  --modal-overlay: rgba(15, 23, 42, 0.6);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  --font-sans: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --sidebar-width: 250px;
+  --header-height: 52px;
+}
+
+body.active,
+body.dark,
+html.dark {
+  --bg-main: #0b1120;
+  --bg-card: #1e293b;
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-hover: #1e293b;
+  --bg-header: #0f172a;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-light: #f8fafc;
+  --border-color: #334155;
+  --input-bg: #0f172a;
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+}
+
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Base form controls styling */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.92rem;
+  background-color: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+input[type="submit"] {
+  background: var(--success);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  padding: 0.6rem 1.25rem;
+}
+
+input[type="submit"]:hover {
+  background: #15803d;
+}
+
+/* Legacy and standard table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+/* HR line and data classes from backend templates */
+.hr_line {
+  border: 0;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0;
+}
+
+.data.msg {
+  color: var(--danger);
+}
+
+.status.approved {
+  background-color: #16a34a;
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+}
+
+.status.pending {
+  background-color: #ea580c;
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+}
+
+.status.disapproved {
+  background-color: #dc2626;
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+body.dark ::-webkit-scrollbar-thumb,
+body.active ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
