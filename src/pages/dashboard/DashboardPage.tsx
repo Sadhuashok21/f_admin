@@ -1,22 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Eye,
   Rocket,
-  CheckCircle2,
   TrendingUp,
   Users,
   Calendar,
   ArrowRight,
   Server,
   RefreshCw,
-  Bug,
-  FolderTree
+  Bug
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { User } from '../../types';
 import { initialUsers } from '../../data/mockData';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
+
+const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatAnalyticsDate = (date: string, options: Intl.DateTimeFormatOptions) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString(undefined, options);
 
 export const DashboardPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -35,51 +43,57 @@ export const DashboardPage: React.FC = () => {
   });
 
   const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0];
+    const date = new Date();
+    date.setDate(date.getDate() - 6);
+    return toDateInputValue(date);
   });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(() => toDateInputValue(new Date()));
+  const [chartPoints, setChartPoints] = useState<
+    { date: string; activities: number; errors: number }[]
+  >([]);
+  const [analyticsMessage, setAnalyticsMessage] = useState('Loading daily analytics…');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
+    setAnalyticsMessage('Loading daily analytics…');
     try {
-      const statsRes = await api.getDashboardStats();
-      if (statsRes && statsRes.stats) {
-        setStats(statsRes.stats);
-        setIsLive(true);
-      }
+      const [statsRes, usersRes, connected, analyticsRes] = await Promise.all([
+        api.getDashboardStats(),
+        api.getUsers({ limit: 6 }),
+        api.checkConnection(),
+        api.getDashboardAnalytics({ startDate, endDate })
+      ]);
 
-      const usersRes = await api.getUsers({ limit: 6 });
-      if (usersRes && usersRes.length > 0) {
-        setUsers(usersRes);
+      if (connected && statsRes?.status && statsRes.stats) {
+        setStats(statsRes.stats);
       }
+      setIsLive(Boolean(connected && statsRes?.status));
+
+      setUsers(connected ? usersRes : initialUsers);
+      setChartPoints(analyticsRes.status ? analyticsRes.daily : []);
+      setAnalyticsMessage(
+        analyticsRes.status ? '' : 'Daily analytics are unavailable. Check the API and sync again.'
+      );
     } catch (e) {
       console.warn('Dashboard using fallback mock data', e);
       setIsLive(false);
+      setChartPoints([]);
+      setAnalyticsMessage('Daily analytics could not be loaded. Check the API and sync again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadData]);
 
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  // Analytics points for the chart
-  const chartPoints = [
-    { day: 'Mon', fullDay: 'Monday', views: Math.round(stats.total_views * 0.15) || 120, downloads: Math.round(stats.total_downloads * 0.2) || 40 },
-    { day: 'Tue', fullDay: 'Tuesday', views: Math.round(stats.total_views * 0.22) || 185, downloads: Math.round(stats.total_downloads * 0.25) || 59 },
-    { day: 'Wed', fullDay: 'Wednesday', views: Math.round(stats.total_views * 0.35) || 240, downloads: Math.round(stats.total_downloads * 0.3) || 78 },
-    { day: 'Thu', fullDay: 'Thursday', views: Math.round(stats.total_views * 0.28) || 195, downloads: Math.round(stats.total_downloads * 0.28) || 64 },
-    { day: 'Fri', fullDay: 'Friday', views: Math.round(stats.total_views * 0.45) || 290, downloads: Math.round(stats.total_downloads * 0.4) || 92 },
-    { day: 'Sat', fullDay: 'Saturday', views: Math.round(stats.total_views * 0.6) || 340, downloads: Math.round(stats.total_downloads * 0.6) || 125 },
-    { day: 'Sun', fullDay: 'Sunday', views: stats.total_views || 410, downloads: stats.total_downloads || 154 }
-  ];
-
-  const maxVal = Math.max(...chartPoints.map(c => Math.max(c.views, c.downloads)), 10);
+  const maxVal = Math.max(...chartPoints.map(point => Math.max(point.activities, point.errors)), 10);
 
   return (
     <div>
@@ -101,7 +115,7 @@ export const DashboardPage: React.FC = () => {
               }}
             >
               <Server size={12} />
-              {isLive ? 'Live API (Port 8000)' : 'Standalone Mode'}
+              {isLive ? 'Live API' : 'Sample Data'}
             </span>
           </div>
           <p className="page-subtitle">Ascentracore Solutions Central Unified Control Plane</p>
@@ -126,33 +140,25 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           title="Total Views"
           value={stats.total_views}
-          trend="18.4"
-          trendDirection="up"
-          comparisonText="Platform wide across SFS & Web"
+          comparisonText="All-time platform views"
           icon={<Eye size={20} color="var(--primary)" />}
         />
         <StatCard
           title="Total Blueprints"
           value={stats.total_blueprints}
-          trend="8.2"
-          trendDirection="up"
-          comparisonText="110 Approved, 1 In Review"
+          comparisonText={`${stats.approved_blueprints.toLocaleString()} approved`}
           icon={<Rocket size={20} color="var(--warning)" />}
         />
         <StatCard
           title="Total Users"
           value={stats.total_users}
-          trend="12.0"
-          trendDirection="up"
           comparisonText="Active registered accounts"
           icon={<Users size={20} color="var(--success)" />}
         />
         <StatCard
           title="Recorded Errors"
           value={stats.total_errors}
-          trend="4.2"
-          trendDirection="down"
-          comparisonText="Logged in AllErrors audit table"
+          comparisonText="All-time recorded errors"
           icon={<Bug size={20} color="var(--danger)" />}
         />
       </div>
@@ -162,13 +168,14 @@ export const DashboardPage: React.FC = () => {
         <div className="card-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <TrendingUp size={20} color="var(--primary)" />
-            <h2 className="card-title">Live Telemetry & Activity</h2>
+            <h2 className="card-title">Daily Activity & Errors</h2>
           </div>
           <div className="date-filter-group">
             <Calendar size={16} color="var(--text-muted)" />
             <input
               type="date"
               value={startDate}
+              max={endDate}
               onChange={e => setStartDate(e.target.value)}
               style={{ padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
             />
@@ -176,6 +183,7 @@ export const DashboardPage: React.FC = () => {
             <input
               type="date"
               value={endDate}
+              min={startDate}
               onChange={e => setEndDate(e.target.value)}
               style={{ padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}
             />
@@ -187,15 +195,15 @@ export const DashboardPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)', fontWeight: 600 }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: 'var(--primary)' }} />
-              Views
+              Activities
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)', fontWeight: 600 }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#10b981' }} />
-              Downloads
+              Errors
             </span>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Hover or tap any column to inspect daily telemetry
+            Hover or tap any day to inspect recorded counts
           </span>
         </div>
 
@@ -206,21 +214,21 @@ export const DashboardPage: React.FC = () => {
         >
           <svg style={{ width: '100%', height: '100%', overflow: 'visible' }}>
             <defs>
-              <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="activitiesGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.95" />
                 <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.75" />
               </linearGradient>
-              <linearGradient id="viewsGradHover" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="activitiesGradHover" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#60a5fa" stopOpacity="1" />
                 <stop offset="100%" stopColor="#2563eb" stopOpacity="0.95" />
               </linearGradient>
-              <linearGradient id="downloadsGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#047857" stopOpacity="0.75" />
+              <linearGradient id="errorsGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f87171" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#b91c1c" stopOpacity="0.75" />
               </linearGradient>
-              <linearGradient id="downloadsGradHover" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#34d399" stopOpacity="1" />
-                <stop offset="100%" stopColor="#059669" stopOpacity="0.95" />
+              <linearGradient id="errorsGradHover" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fca5a5" stopOpacity="1" />
+                <stop offset="100%" stopColor="#dc2626" stopOpacity="0.95" />
               </linearGradient>
               <filter id="barGlow" x="-20%" y="-20%" width="140%" height="140%">
                 <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#3b82f6" floodOpacity="0.35" />
@@ -240,17 +248,21 @@ export const DashboardPage: React.FC = () => {
 
             {/* Columns & Data Bars */}
             {chartPoints.map((p, idx) => {
-              const xPercent = (idx / (chartPoints.length - 1)) * 82 + 9;
-              const barHeightViews = Math.min(170, (p.views / maxVal) * 160 + 10);
-              const yPosViews = 200 - barHeightViews;
+              const xPercent = chartPoints.length === 1 ? 50 : (idx / (chartPoints.length - 1)) * 82 + 9;
+              const barHeightActivities = p.activities > 0
+                ? Math.min(170, (p.activities / maxVal) * 160 + 10)
+                : 0;
+              const yPosActivities = 200 - barHeightActivities;
 
-              const barHeightDownloads = Math.min(170, (p.downloads / maxVal) * 160 + 10);
-              const yPosDownloads = 200 - barHeightDownloads;
+              const barHeightErrors = p.errors > 0
+                ? Math.min(170, (p.errors / maxVal) * 160 + 10)
+                : 0;
+              const yPosErrors = 200 - barHeightErrors;
 
               const isHovered = hoveredIdx === idx;
 
               return (
-                <g key={p.day}>
+                <g key={p.date}>
                   {/* Subtle Column Highlight Background on Hover */}
                   <rect
                     x={`${xPercent - 5.5}%`}
@@ -276,14 +288,14 @@ export const DashboardPage: React.FC = () => {
                     />
                   )}
 
-                  {/* Views Bar (Primary) */}
+                  {/* Activity Bar (Primary) */}
                   <rect
                     x={`${xPercent - 2.8}%`}
-                    y={yPosViews}
+                    y={yPosActivities}
                     width="2.6%"
-                    height={barHeightViews}
+                    height={barHeightActivities}
                     rx="3"
-                    fill={isHovered ? 'url(#viewsGradHover)' : 'url(#viewsGrad)'}
+                    fill={isHovered ? 'url(#activitiesGradHover)' : 'url(#activitiesGrad)'}
                     filter={isHovered ? 'url(#barGlow)' : undefined}
                     style={{
                       transition: 'y 0.2s ease, height 0.2s ease, fill 0.2s ease',
@@ -291,14 +303,14 @@ export const DashboardPage: React.FC = () => {
                     }}
                   />
 
-                  {/* Downloads Bar (Secondary) */}
+                  {/* Errors Bar (Secondary) */}
                   <rect
                     x={`${xPercent + 0.2}%`}
-                    y={yPosDownloads}
+                    y={yPosErrors}
                     width="2.6%"
-                    height={barHeightDownloads}
+                    height={barHeightErrors}
                     rx="3"
-                    fill={isHovered ? 'url(#downloadsGradHover)' : 'url(#downloadsGrad)'}
+                    fill={isHovered ? 'url(#errorsGradHover)' : 'url(#errorsGrad)'}
                     style={{
                       transition: 'y 0.2s ease, height 0.2s ease, fill 0.2s ease',
                       cursor: 'pointer'
@@ -310,7 +322,7 @@ export const DashboardPage: React.FC = () => {
                     <>
                       <circle
                         cx={`${xPercent - 1.5}%`}
-                        cy={yPosViews}
+                        cy={yPosActivities}
                         r="4"
                         fill="#60a5fa"
                         stroke="#ffffff"
@@ -318,9 +330,9 @@ export const DashboardPage: React.FC = () => {
                       />
                       <circle
                         cx={`${xPercent + 1.5}%`}
-                        cy={yPosDownloads}
+                        cy={yPosErrors}
                         r="4"
-                        fill="#34d399"
+                        fill="#f87171"
                         stroke="#ffffff"
                         strokeWidth="2"
                       />
@@ -337,20 +349,20 @@ export const DashboardPage: React.FC = () => {
                     textAnchor="middle"
                     style={{ transition: 'fill 0.2s ease, font-weight 0.2s ease' }}
                   >
-                    {p.day}
+                    {formatAnalyticsDate(p.date, { weekday: 'short' })}
                   </text>
 
                   {/* Metric Number above peak */}
                   <text
                     x={`${xPercent}%`}
-                    y={Math.min(yPosViews, yPosDownloads) - 8}
+                    y={Math.min(yPosActivities, yPosErrors) - 8}
                     fontSize={isHovered ? '11' : '10'}
                     fill={isHovered ? 'var(--primary)' : 'var(--text-main)'}
                     fontWeight={isHovered ? '800' : '600'}
                     textAnchor="middle"
                     style={{ transition: 'fill 0.2s ease' }}
                   >
-                    {p.views}
+                    {p.activities}
                   </text>
 
                   {/* Invisible Full-Column Touch & Hover Hit Box */}
@@ -369,12 +381,31 @@ export const DashboardPage: React.FC = () => {
             })}
           </svg>
 
+          {analyticsMessage && (
+            <div
+              role="status"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'grid',
+                placeItems: 'center',
+                color: 'var(--text-muted)',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                background: 'var(--bg-card)',
+                borderRadius: '8px'
+              }}
+            >
+              {loading ? 'Loading daily analytics…' : analyticsMessage}
+            </div>
+          )}
+
           {/* Floating Tooltip Card */}
-          {hoveredIdx !== null && (() => {
+          {hoveredIdx !== null && chartPoints[hoveredIdx] && (() => {
             const p = chartPoints[hoveredIdx];
-            const xPercent = (hoveredIdx / (chartPoints.length - 1)) * 82 + 9;
-            const barHeightViews = Math.min(170, (p.views / maxVal) * 160 + 10);
-            const yPosViews = 200 - barHeightViews;
+            const xPercent = chartPoints.length === 1 ? 50 : (hoveredIdx / (chartPoints.length - 1)) * 82 + 9;
+            const barHeightActivities = Math.min(170, (p.activities / maxVal) * 160 + 10);
+            const yPosActivities = 200 - barHeightActivities;
 
             // Clamping horizontal alignment so it never overflows left or right edges
             let transformAlign = 'translate(-50%, -105%)';
@@ -386,7 +417,7 @@ export const DashboardPage: React.FC = () => {
                 style={{
                   position: 'absolute',
                   left: `${xPercent}%`,
-                  top: `${Math.max(16, yPosViews - 10)}px`,
+                  top: `${Math.max(16, yPosActivities - 10)}px`,
                   transform: transformAlign,
                   pointerEvents: 'none',
                   zIndex: 50,
@@ -401,31 +432,33 @@ export const DashboardPage: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.35rem', marginBottom: '0.45rem' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{p.fullDay}</span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Activity</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>
+                    {formatAnalyticsDate(p.date, { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Daily totals</span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
-                      Page Views:
+                      Activities:
                     </span>
-                    <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{p.views.toLocaleString()}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{p.activities.toLocaleString()}</span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-                      Downloads:
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
+                      Errors:
                     </span>
-                    <span style={{ fontWeight: 700, color: '#10b981' }}>{p.downloads.toLocaleString()}</span>
+                    <span style={{ fontWeight: 700, color: '#dc2626' }}>{p.errors.toLocaleString()}</span>
                   </div>
 
                   <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '0.35rem', marginTop: '2px', display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                    <span>Conversion Rate:</span>
+                    <span>Selected date:</span>
                     <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                      {p.views > 0 ? `${Math.round((p.downloads / p.views) * 100)}%` : '0%'}
+                      {formatAnalyticsDate(p.date, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                 </div>

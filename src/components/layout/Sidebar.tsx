@@ -25,7 +25,8 @@ import {
   FolderGit2,
   Bug,
   Activity,
-  FileCheck
+  FileCheck,
+  BadgeIndianRupee
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -207,6 +208,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             <NavLink to="/skiltrix/submissions" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <FileCheck size={18} />
               <span className="sidebar_icons_name">Submissions</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/compiler-pricing" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <BadgeIndianRupee size={18} />
+              <span className="sidebar_icons_name">ABAP Pricing & Coupons</span>
             </NavLink>
           </li>
         </ul>

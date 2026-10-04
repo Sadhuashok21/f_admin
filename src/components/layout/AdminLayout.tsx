@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { TopNav } from './TopNav';
 import { Sidebar } from './Sidebar';
+import { useAuth } from '../../context/AuthContext';
 
 export const AdminLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -11,6 +12,13 @@ export const AdminLayout: React.FC = () => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   });
   const location = useLocation();
+  const { user, isAuthenticated, isLoading, login } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      login(location.pathname + location.search + location.hash);
+    }
+  }, [isLoading, isAuthenticated, login, location]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,6 +43,18 @@ export const AdminLayout: React.FC = () => {
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => !prev);
   };
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div role="status" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--text-main)' }}>
+        {isLoading ? 'Checking your session…' : 'Redirecting to secure sign in…'}
+      </div>
+    );
+  }
+
+  if (user && user.role !== 'Administrator') {
+    return <Navigate to="/access-restricted" replace />;
+  }
 
   return (
     <div className="app-container">

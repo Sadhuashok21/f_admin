@@ -1,20 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldX, Lock, ArrowRight } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { ShieldX } from 'lucide-react';
 
 export const AccessRestrictedPage: React.FC = () => {
-  const { login } = useAuth();
   const navigate = useNavigate();
-
-  const handleSignIn = () => {
-    login({
-      name: 'Sadhu Ashok Kumar',
-      email: 'ashok@ascentracoresolutions.com',
-      role: 'Administrator'
-    });
-    navigate('/');
-  };
 
   return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
@@ -56,17 +45,11 @@ export const AccessRestrictedPage: React.FC = () => {
         </h1>
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '1.75rem' }}>
-          You do not have the required permissions or your administrative session has expired. Please authenticate to gain access to the Ascentracore Solutions Admin Portal.
+          This account does not have administrator access to the Ascentracore Solutions Admin Portal. Contact an administrator if you need access.
         </p>
 
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleSignIn}>
-            <Lock size={16} />
-            <span>Authenticate as Administrator</span>
-            <ArrowRight size={16} />
-          </button>
-
-          <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => navigate('/')}>
+          <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => navigate(-1)}>
             <span>Return to Public Site</span>
           </button>
         </div>
