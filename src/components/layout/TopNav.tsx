@@ -11,7 +11,7 @@ interface TopNavProps {
 
 export const TopNav: React.FC<TopNavProps> = ({ onToggleSidebar }) => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
@@ -31,6 +31,13 @@ export const TopNav: React.FC<TopNavProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="upbar_icons">
+        {!isAuthenticated && (
+          <button
+            type="button"
+            onClick={() => login()}
+            style={{ color: 'var(--text-light)', fontSize: '0.875rem', fontWeight: 600, background: 'transparent', border: 0, cursor: 'pointer' }}
+          >Sign in</button>
+        )}
         <button
           className="icon_btn"
           onClick={toggleTheme}

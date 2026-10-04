@@ -26,6 +26,12 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+export interface DashboardAnalyticsPoint {
+  date: string;
+  activities: number;
+  errors: number;
+}
+
 /**
  * Generic fetch wrapper with timeout, JSON parsing, and error safety.
  */
@@ -34,12 +40,17 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
 
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('as_access_token') || localStorage.getItem('access_token')) : null;
+    const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
     const res = await fetch(`${API_BASE}${url}`, {
       ...options,
+      credentials: 'include',
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...(options?.headers || {})
       }
     });
@@ -72,7 +83,13 @@ export const api = {
    */
   async checkConnection(): Promise<boolean> {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/stats/`, { method: 'GET' });
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('as_access_token') || localStorage.getItem('access_token')) : null;
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch(`${API_BASE}/api/admin/stats/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { Accept: 'application/json', ...authHeaders }
+      });
       return res.ok;
     } catch {
       return false;
@@ -102,6 +119,22 @@ export const api = {
         },
         recent_activities: []
       }
+    );
+  },
+
+  async getDashboardAnalytics(params: { startDate: string; endDate: string }) {
+    const query = new URLSearchParams({
+      start_date: params.startDate,
+      end_date: params.endDate
+    });
+
+    return fetchWithFallback<{
+      status: boolean;
+      daily: DashboardAnalyticsPoint[];
+    }>(
+      `/api/admin/analytics/?${query.toString()}`,
+      { method: 'GET' },
+      { status: false, daily: [] }
     );
   },
 

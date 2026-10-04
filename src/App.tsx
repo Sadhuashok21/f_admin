@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -32,6 +32,7 @@ import { SkiltrixFileSystemPage } from './pages/skiltrix/SkiltrixFileSystemPage'
 import { SkiltrixLanguagesPage } from './pages/skiltrix/SkiltrixLanguagesPage';
 import { SkiltrixUsersPage } from './pages/skiltrix/SkiltrixUsersPage';
 import { SkiltrixSubmissionsPage } from './pages/skiltrix/SkiltrixSubmissionsPage';
+import { SkiltrixCompilerPricingPage } from './pages/skiltrix/SkiltrixCompilerPricingPage';
 
 // SonicOra Pages
 import { SonicoraOverviewPage } from './pages/sonicora/SonicoraOverviewPage';
@@ -55,6 +56,7 @@ import { UsersPage } from './pages/users/UsersPage';
 // User Profile Module
 import { UserProfilePage } from './pages/user_profile/UserProfilePage';
 import { UserLogActivityPage } from './pages/user_profile/UserLogActivityPage';
+import { AuthCallback } from './auth/Callback';
 
 export const App: React.FC = () => {
   return (
@@ -65,6 +67,7 @@ export const App: React.FC = () => {
             {/* Standalone full-screen pages */}
             <Route path="/access-restricted" element={<AccessRestrictedPage />} />
             <Route path="/error" element={<ErrorPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Admin App Shell with Topbar & Collapsible Dynamic Sidebars */}
             <Route element={<AdminLayout />}>
@@ -95,6 +98,7 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/languages" element={<SkiltrixLanguagesPage />} />
               <Route path="/skiltrix/users" element={<SkiltrixUsersPage />} />
               <Route path="/skiltrix/submissions" element={<SkiltrixSubmissionsPage />} />
+              <Route path="/skiltrix/compiler-pricing" element={<SkiltrixCompilerPricingPage />} />
 
               {/* SonicOra Module Routes */}
               <Route path="/sonicora" element={<SonicoraOverviewPage />} />
