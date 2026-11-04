@@ -20,7 +20,7 @@ export const AccessRestrictedPage: React.FC = () => {
         }}
       >
         <img
-          src="/as_logo.webp"
+          src="https://cdn.ascentracoresolutions.com/ascentra.webp"
           alt="Ascentracore Solutions"
           style={{ width: '52px', height: '52px', borderRadius: '12px', objectFit: 'contain', marginBottom: '1rem', border: '1px solid var(--border-color)', padding: '4px', background: 'var(--bg-card)' }}
         />

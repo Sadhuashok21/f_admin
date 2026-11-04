@@ -14,15 +14,18 @@ import {
   Movie,
   Song,
   BankAccount,
-  Submission
+  Submission,
+  CompanyMockItem,
+  CompanyBlueprintItem
 } from '../types';
+import { getSfsImageUrl, getStImageUrl } from '../utils/cdn';
 
 export const initialUsers: User[] = [
   {
     id: 'usr_101',
     name: 'Suresh Raina',
     email: 'suresh.raina@example.com',
-    profile: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    profile: getStImageUrl('st/images/user-1.webp'),
     type: 'Creator',
     status: 'approved',
     platform: 'web',
@@ -36,7 +39,7 @@ export const initialUsers: User[] = [
     id: 'usr_102',
     name: 'Priya Sharma',
     email: 'priya.sharma@example.com',
-    profile: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    profile: getStImageUrl('st/images/user-2.webp'),
     type: 'Student',
     status: 'approved',
     platform: 'mobile',
@@ -50,7 +53,7 @@ export const initialUsers: User[] = [
     id: 'usr_103',
     name: 'Vikram Patel',
     email: 'vikram.p@example.com',
-    profile: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    profile: getStImageUrl('st/images/user-3.webp'),
     type: 'Creator',
     status: 'pending',
     platform: 'web',
@@ -64,7 +67,7 @@ export const initialUsers: User[] = [
     id: 'usr_104',
     name: 'Ananya Reddy',
     email: 'ananya.r@example.com',
-    profile: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
+    profile: getStImageUrl('st/images/user-4.webp'),
     type: 'Member',
     status: 'approved',
     platform: 'web',
@@ -78,7 +81,7 @@ export const initialUsers: User[] = [
     id: 'usr_105',
     name: 'Rohit Verma',
     email: 'rohit.verma@example.com',
-    profile: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+    profile: getStImageUrl('st/images/user-5.webp'),
     type: 'Moderator',
     status: 'disapproved',
     platform: 'mobile',
@@ -95,7 +98,7 @@ export const initialBlueprints: Blueprint[] = [
     bp_id: 'bp_saturn_v',
     name: 'Saturn V Heavy Lifter',
     user: { name: 'Sadhu Ashok', email: 'ashok@ascentracoresolutions.com' },
-    image: 'https://images.unsplash.com/photo-1517976487502-5731f30bc482?w=400',
+    image: getSfsImageUrl('ML22A9CA4LP896ETW4W3.png'),
     type: 'blueprint',
     categories: ['Rockets', 'Heavy Lifters', 'Apollo'],
     downloads: 14820,
@@ -114,7 +117,7 @@ export const initialBlueprints: Blueprint[] = [
     bp_id: 'bp_falcon_heavy',
     name: 'Falcon Heavy Reusable Booster',
     user: { name: 'Elon M.', email: 'spacex@orbit.org' },
-    image: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=400',
+    image: getSfsImageUrl('B5X93ZC3PGFMZSYNDT7M.jpg'),
     type: 'blueprint',
     categories: ['SpaceX', 'Reusable'],
     downloads: 28940,
@@ -133,7 +136,7 @@ export const initialBlueprints: Blueprint[] = [
     bp_id: 'bp_iss_station',
     name: 'International Space Station Modular',
     user: { name: 'NASA Fanatic', email: 'station@astro.net' },
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400',
+    image: getSfsImageUrl('X85YYNSMUSS5YWWUVGWL.jpeg'),
     type: 'blueprint',
     categories: ['Stations', 'Modular'],
     downloads: 9410,
@@ -152,7 +155,7 @@ export const initialBlueprints: Blueprint[] = [
     bp_id: 'planet_mars_colony',
     name: 'Mars Colony 2050 Custom World',
     user: { name: 'Astro Terra', email: 'worlds@terra.io' },
-    image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400',
+    image: getSfsImageUrl('J6M9MCYJAQMDQ8DRWJQZ.webp'),
     type: 'planet',
     categories: ['Planets', 'Custom Worlds'],
     downloads: 5120,
@@ -171,7 +174,7 @@ export const initialBlueprints: Blueprint[] = [
     bp_id: 'planet_jupiter_moons',
     name: 'Jupiter Full Moon System Pack',
     user: { name: 'Cosmo Dev', email: 'cosmo@galaxies.org' },
-    image: 'https://images.unsplash.com/photo-1614313913007-2b4ae8ce32d6?w=400',
+    image: getSfsImageUrl('H29FLKG65BBVUH2VP8UH.webp'),
     type: 'planet',
     categories: ['Planets', 'Moons'],
     downloads: 3890,
@@ -185,6 +188,44 @@ export const initialBlueprints: Blueprint[] = [
     sfs_link: 'https://sharing.spaceflightsimulator.app/planet/jupiter-pack',
     status: 'pending',
     created_at: '2026-09-25'
+  },
+  {
+    bp_id: '4U79806CVN1LE14HS5AD',
+    name: 'ISS Canadarm2 Robotic Arm Mod',
+    user: { name: 'Sadhu Ashok', email: 'ashok@ascentracoresolutions.com' },
+    image: getSfsImageUrl('4U79806CVN1LE14HS5AD.png'),
+    type: 'mod',
+    categories: ['Mods', 'Robotics', 'ISS'],
+    downloads: 89,
+    likes: 62,
+    views: 215,
+    share: 24,
+    fdownloads: 89,
+    flikes: 62,
+    fviews: 215,
+    fshare: 24,
+    sfs_link: 'https://sharing.spaceflightsimulator.app/mod/canadarm2',
+    status: 'approved',
+    created_at: '2026-10-15'
+  },
+  {
+    bp_id: 'QUXW8SBDHELITI04ILFG',
+    name: 'My First SFS Mod - Electricity System',
+    user: { name: 'Sadhu Ashok', email: 'ashok@ascentracoresolutions.com' },
+    image: getSfsImageUrl('QUXW8SBDHELITI04ILFG.png'),
+    type: 'mod',
+    categories: ['Mods', 'Electricity', 'Systems'],
+    downloads: 56,
+    likes: 38,
+    views: 142,
+    share: 12,
+    fdownloads: 56,
+    flikes: 38,
+    fviews: 142,
+    fshare: 12,
+    sfs_link: 'https://sharing.spaceflightsimulator.app/mod/electricity-system',
+    status: 'approved',
+    created_at: '2026-10-18'
   }
 ];
 
@@ -192,28 +233,28 @@ export const initialCategories: BlueprintCategory[] = [
   {
     id: 1,
     bp_name: 'Heavy Launch Vehicles',
-    bp_img: 'https://images.unsplash.com/photo-1517976487502-5731f30bc482?w=400',
+    bp_img: getSfsImageUrl('6W9NUGIRW6XAMNL90WKG.webp'),
     bp_para: 'Massive orbital rockets designed for interplanetary payload missions and deep space exploration.',
     status: 'approved'
   },
   {
     id: 2,
     bp_name: 'Reusable Boosters',
-    bp_img: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=400',
+    bp_img: getSfsImageUrl('U80RV4YK3DBPIFI8RO0E.png'),
     bp_para: 'State of the art vertical takeoff and vertical landing recovery launch systems.',
     status: 'approved'
   },
   {
     id: 3,
     bp_name: 'Orbital Space Stations',
-    bp_img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400',
+    bp_img: getSfsImageUrl('UBNL4EU24GWLDYYLH1RI.webp'),
     bp_para: 'Modular habitats, solar arrays, and scientific research labs stationed in low earth orbit.',
     status: 'approved'
   },
   {
     id: 4,
     bp_name: 'Planets & Solar Systems',
-    bp_img: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400',
+    bp_img: getSfsImageUrl('G8XPLHQQ9GGK9TRD0F72.webp'),
     bp_para: 'Custom planetary packs, realistic terrains, and celestial textures for Spaceflight Simulator.',
     status: 'approved'
   }
@@ -223,7 +264,7 @@ export const initialCompanies: Company[] = [
   {
     company_id: 'comp_google',
     name: 'Google LLC',
-    image: 'https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=100',
+    image: getStImageUrl('st/images/google-logo.webp'),
     description: 'Multinational technology company focusing on search, AI, cloud computing, and software.',
     status: 'active',
     created_at: '2026-08-10',
@@ -232,7 +273,7 @@ export const initialCompanies: Company[] = [
   {
     company_id: 'comp_microsoft',
     name: 'Microsoft Corporation',
-    image: 'https://images.unsplash.com/photo-1583321500900-82807e458f3c?w=100',
+    image: getStImageUrl('st/images/microsoft-logo.webp'),
     description: 'Leading technology pioneer developing Windows, Azure cloud services, and productivity tools.',
     status: 'active',
     created_at: '2026-08-12',
@@ -292,7 +333,7 @@ export const initialInternships: Internship[] = [
     company_id: 'comp_google',
     company: {
       name: 'Google LLC',
-      image: 'https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=100'
+      image: getStImageUrl('st/images/google-logo.webp')
     },
     type: 'remote',
     paid: 0,
@@ -309,7 +350,7 @@ export const initialCourses: Course[] = [
   {
     course_id: 'crs_ts_mastery',
     name: 'Full Stack TypeScript & React 19 Architecture',
-    image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',
+    image: getStImageUrl('st/images/course-ts.webp'),
     type: 'advanced',
     paid: 1,
     price: 4999,
@@ -320,7 +361,7 @@ export const initialCourses: Course[] = [
   {
     course_id: 'crs_django_core',
     name: 'Scalable Django Microservices & Database Routing',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400',
+    image: getStImageUrl('st/images/course-django.webp'),
     type: 'intermediate',
     paid: 0,
     description: 'Build robust backend architectures with authentication, custom routers, and caching.',
@@ -330,7 +371,7 @@ export const initialCourses: Course[] = [
   {
     course_id: 'crs_space_sim',
     name: 'Orbital Mechanics & Physics for Spaceflight Simulator',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400',
+    image: getSfsImageUrl('UBNL4EU24GWLDYYLH1RI.webp'),
     type: 'beginner',
     paid: 1,
     price: 1999,
@@ -344,7 +385,7 @@ export const initialVideos: Video[] = [
   {
     video_id: 'vid_01',
     title: 'Introduction to React 19 Actions & Hooks',
-    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
+    image: getStImageUrl('st/images/video-react19.webp'),
     video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     course_id: 'crs_ts_mastery',
     course_name: 'Full Stack TypeScript & React 19 Architecture',
@@ -355,7 +396,7 @@ export const initialVideos: Video[] = [
   {
     video_id: 'vid_02',
     title: 'Configuring MySQL Multi-DB Routers in Django',
-    image: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=400',
+    image: getStImageUrl('st/images/video-mysql.webp'),
     course_id: 'crs_django_core',
     course_name: 'Scalable Django Microservices & Database Routing',
     description: 'Segregate read-replicas, dynamic schemas, and migration routers.',
@@ -509,10 +550,10 @@ export const initialDatabaseTables: Record<string, TableInfo[]> = {
 };
 
 export const initialMovies: Movie[] = [
-  { movie_id: 'mov_rr', movie_name: 'RRR', movie_img: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400', hero: 'NTR Jr, Ram Charan', heroine: 'Alia Bhatt', release_year: 2022, status: 'approved' },
-  { movie_id: 'mov_bb', movie_name: 'Baahubali 2: The Conclusion', movie_img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400', hero: 'Prabhas', heroine: 'Anushka Shetty', release_year: 2017, status: 'approved' },
-  { movie_id: 'mov_kgf', movie_name: 'K.G.F: Chapter 2', movie_img: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400', hero: 'Yash', heroine: 'Srinidhi Shetty', release_year: 2022, status: 'approved' },
-  { movie_id: 'mov_pushpa', movie_name: 'Pushpa 2: The Rule', movie_img: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=400', hero: 'Allu Arjun', heroine: 'Rashmika Mandanna', release_year: 2024, status: 'approved' }
+  { movie_id: 'mov_rr', movie_name: 'RRR', movie_img: getStImageUrl('st/images/movie-rrr.webp'), hero: 'NTR Jr, Ram Charan', heroine: 'Alia Bhatt', release_year: 2022, status: 'approved' },
+  { movie_id: 'mov_bb', movie_name: 'Baahubali 2: The Conclusion', movie_img: getStImageUrl('st/images/movie-bb2.webp'), hero: 'Prabhas', heroine: 'Anushka Shetty', release_year: 2017, status: 'approved' },
+  { movie_id: 'mov_kgf', movie_name: 'K.G.F: Chapter 2', movie_img: getStImageUrl('st/images/movie-kgf2.webp'), hero: 'Yash', heroine: 'Srinidhi Shetty', release_year: 2022, status: 'approved' },
+  { movie_id: 'mov_pushpa', movie_name: 'Pushpa 2: The Rule', movie_img: getStImageUrl('st/images/movie-pushpa2.webp'), hero: 'Allu Arjun', heroine: 'Rashmika Mandanna', release_year: 2024, status: 'approved' }
 ];
 
 export const initialSongs: Song[] = [
@@ -528,5 +569,190 @@ export const initialBankAccounts: BankAccount[] = [
     ifsc: 'SBIN0004312',
     account_number: '•••• •••• •••• 4312',
     is_primary: true
+  }
+];
+
+export const initialCompanyMocks: CompanyMockItem[] = [
+  {
+    assessment_id: 'asmt_amazon_sde1',
+    title: 'Amazon-style SDE Mock',
+    slug: 'amazon-style-sde-mock',
+    category: 'Company Mocks',
+    company_tag: 'Amazon-style',
+    description: 'Simulated Amazon-style Software Development Engineer assessment testing CS Fundamentals, backend debugging, and scalable DSA algorithms.',
+    difficulty: 'Medium',
+    duration_minutes: 90,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: false,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 3,
+    questions_count: 4,
+  },
+  {
+    assessment_id: 'asmt_google_placement',
+    title: 'Google-style Placement Mock',
+    slug: 'google-style-placement-mock',
+    category: 'DSA Assessments',
+    company_tag: 'Google-style',
+    description: 'Google-style algorithmic screening mock testing advanced problem solving, heap optimizations, interval greedy scheduling, and dynamic programming.',
+    difficulty: 'Hard',
+    duration_minutes: 105,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: true,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 1,
+    questions_count: 1,
+  },
+  {
+    assessment_id: 'asmt_microsoft_placement',
+    title: 'Microsoft-style Placement Mock',
+    slug: 'microsoft-style-placement-mock',
+    category: 'Coding Assessments',
+    company_tag: 'Microsoft-style',
+    description: 'Microsoft-style technical online assessment evaluating operating system internals, algorithm efficiency, dynamic programming, and binary search.',
+    difficulty: 'Hard',
+    duration_minutes: 90,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: true,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 2,
+    questions_count: 2,
+  },
+  {
+    assessment_id: 'asmt_deloitte_placement',
+    title: 'Deloitte-style Placement Mock',
+    slug: 'deloitte-style-placement-mock',
+    category: 'Mixed Placement Assessments',
+    company_tag: 'Deloitte-style',
+    description: 'Deloitte-style comprehensive campus placement test evaluating quantitative problem solving, logical reasoning, relational SQL, and coding.',
+    difficulty: 'Medium',
+    duration_minutes: 75,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: false,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 4,
+    questions_count: 5,
+  },
+  {
+    assessment_id: 'asmt_tcs_placement',
+    title: 'TCS-style Placement Mock',
+    slug: 'tcs-style-placement-mock',
+    category: 'Mixed Placement Assessments',
+    company_tag: 'TCS-style',
+    description: 'TCS NQT-style simulated recruitment test covering numerical aptitude, deductive reasoning, and hands-on algorithmic coding.',
+    difficulty: 'Medium',
+    duration_minutes: 90,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: false,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 3,
+    questions_count: 3,
+  },
+  {
+    assessment_id: 'asmt_accenture_coding',
+    title: 'Accenture-style Coding Mock',
+    slug: 'accenture-style-coding-mock',
+    category: 'Company Mocks',
+    company_tag: 'Accenture-style',
+    description: 'Accenture-style assessment focusing on critical reasoning, technical pseudocode execution, and practical coding exercises.',
+    difficulty: 'Medium',
+    duration_minutes: 90,
+    pass_percentage: 70,
+    total_marks: 100,
+    is_company_mock: true,
+    is_pro_only: false,
+    proctoring_enabled: true,
+    active: true,
+    sections_count: 3,
+    questions_count: 3,
+  }
+];
+
+export const initialCompanyBlueprints: CompanyBlueprintItem[] = [
+  {
+    blueprint_id: 'bp_amz_01',
+    company_name: 'Amazon-style SDE Mock',
+    slug: 'amazon-style-sde',
+    description: 'Simulated Amazon-style Software Development Engineer assessment testing CS Fundamentals, backend debugging, and scalable DSA algorithms.',
+    category: 'Company Mocks',
+    sections_config: [
+      { title: 'Section 1: CS Fundamentals', type: 'technical', marks: 20, duration: 25 },
+      { title: 'Section 2: Backend & System Debugging', type: 'debugging', marks: 30, duration: 25 },
+      { title: 'Section 3: Core DSA & Coding', type: 'coding', marks: 50, duration: 40 }
+    ],
+    recommended_topics: ['DSA', 'CS Fundamentals', 'Debugging', 'Heaps'],
+    duration_minutes: 90,
+    tier: 'free',
+    icon_name: 'briefcase',
+    is_active: true,
+    mock_linked: true
+  },
+  {
+    blueprint_id: 'bp_del_02',
+    company_name: 'Deloitte-style Placement Mock',
+    slug: 'deloitte-style-placement',
+    description: 'Deloitte-style comprehensive campus placement test evaluating quantitative problem solving, logical reasoning, relational SQL, and coding.',
+    category: 'Mixed Placement Assessments',
+    sections_config: [
+      { title: 'Section 1: Quantitative Aptitude', type: 'aptitude', marks: 25, duration: 20 },
+      { title: 'Section 2: Logical Reasoning', type: 'reasoning', marks: 25, duration: 20 },
+      { title: 'Section 3: SQL & Database Querying', type: 'sql', marks: 20, duration: 15 },
+      { title: 'Section 4: Hands-on Programming', type: 'coding', marks: 30, duration: 20 }
+    ],
+    recommended_topics: ['Aptitude', 'Logical Reasoning', 'SQL', 'Coding'],
+    duration_minutes: 75,
+    tier: 'free',
+    icon_name: 'briefcase',
+    is_active: true,
+    mock_linked: true
+  },
+  {
+    blueprint_id: 'bp_tcs_03',
+    company_name: 'TCS-style Placement Mock',
+    slug: 'tcs-style-placement',
+    description: 'TCS NQT-style simulated recruitment test covering numerical aptitude, deductive reasoning, and hands-on algorithmic coding.',
+    category: 'Mixed Placement Assessments',
+    sections_config: [
+      { title: 'Section 1: Numerical Ability', type: 'aptitude', marks: 25, duration: 30 },
+      { title: 'Section 2: Reasoning Ability', type: 'reasoning', marks: 25, duration: 30 },
+      { title: 'Section 3: Hands-on Programming', type: 'coding', marks: 50, duration: 30 }
+    ],
+    recommended_topics: ['Numerical Aptitude', 'Reasoning', 'Programming'],
+    duration_minutes: 90,
+    tier: 'free',
+    icon_name: 'briefcase',
+    is_active: true,
+    mock_linked: true
+  },
+  {
+    blueprint_id: 'bp_goog_04',
+    company_name: 'Google-style Placement Mock',
+    slug: 'google-style-placement',
+    description: 'Google-style algorithmic screening mock testing advanced problem solving, heap optimizations, interval greedy scheduling, and dynamic programming.',
+    category: 'DSA Assessments',
+    sections_config: [
+      { title: 'Section 1: Algorithmic Problem Solving', type: 'coding', marks: 100, duration: 105 }
+    ],
+    recommended_topics: ['Advanced DSA', 'Heaps', 'Intervals', 'Dynamic Programming'],
+    duration_minutes: 105,
+    tier: 'pro',
+    icon_name: 'briefcase',
+    is_active: true,
+    mock_linked: true
   }
 ];

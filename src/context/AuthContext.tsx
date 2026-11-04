@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { initiateLogin } from '../auth/pkce';
+import { initiateLogin, resolveApiOrigin, resolveAccountsUrl } from '../auth/pkce';
 
 export interface AuthUser {
   userId: string;
@@ -33,8 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
-  const accountsUrl = (import.meta.env.VITE_ACCOUNTS_URL || 'http://localhost:5174').replace(/\/+$/, '');
+  const apiBase = resolveApiOrigin(import.meta.env.VITE_API_BASE_URL);
+  const accountsUrl = resolveAccountsUrl(import.meta.env.VITE_ACCOUNTS_URL);
 
   // Verify session on mount with silent SSO detection
   useEffect(() => {

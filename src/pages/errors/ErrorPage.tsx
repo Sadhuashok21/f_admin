@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { AlertOctagon, ArrowLeft, RefreshCw, Home } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 
 interface ErrorPageProps {
   code?: number;
@@ -16,125 +16,215 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({ code: defaultCode = 404, t
   const codeParam = parseInt(queryParams.get('code') || '', 10);
   const [activeCode, setActiveCode] = useState<number>(codeParam || defaultCode);
 
-  const errorMessages: Record<number, { title: string; subtitle: string; desc: string }> = {
+  const errorSpecs: Record<number, { img: string; heading: string; message: string; title: string }> = {
     400: {
-      title: '400 Bad Request',
-      subtitle: "That's an error",
-      desc: 'The server cannot process the request due to malformed syntax.'
+      img: '400',
+      heading: '400 Bad request',
+      message: 'The request is malformed. Please refresh or try after some time.',
+      title: '400 Bad Request'
     },
     401: {
-      title: '401 Unauthorized',
-      subtitle: 'Authentication required',
-      desc: 'The requested resource requires valid administrative authentication.'
+      img: '400',
+      heading: '401 Unauthorized request',
+      message: 'Authentication is required to access the data.',
+      title: '401 Unauthorized'
     },
     403: {
-      title: '403 Forbidden',
-      subtitle: 'Access not permitted',
-      desc: 'You do not have administrative clearance to access this path.'
+      img: '403',
+      heading: '403 Forbidden',
+      message: "You don't have permission to access this resource.",
+      title: '403 Forbidden'
     },
     404: {
-      title: "404 That's an error",
-      subtitle: 'Not Found',
-      desc: `Your requested URL "${location.pathname}" was not found on this server. We will fix it soon.`
+      img: '404',
+      heading: "404 That's an error",
+      message: `Your requested url ${location.pathname} was not found on this server. We will fix soon.`,
+      title: '404 Not Found'
     },
     408: {
-      title: '408 Request Timeout',
-      subtitle: 'Server timed out waiting',
-      desc: 'The server did not receive a complete request within the allowed time.'
+      img: '408',
+      heading: '408 Request timeout',
+      message: 'The server is busy. The request is not reached the server.',
+      title: '408 Request Timeout'
     },
     500: {
-      title: '500 Internal Server Error',
-      subtitle: 'Unexpected Server Condition',
-      desc: 'The server encountered an internal error. Please try again in a few moments.'
+      img: '500',
+      heading: '500 Internal server error',
+      message: `Your requested url ${location.pathname} has found an error. We will fix soon.`,
+      title: '500 Internal Server Error'
     },
     502: {
-      title: '502 Bad Gateway',
-      subtitle: 'Invalid Gateway Response',
-      desc: 'The proxy gateway received an invalid response from the upstream daemon.'
+      img: '502',
+      heading: '502 Bad gateway',
+      message: 'Server got ann invalid response.',
+      title: '502 Bad Gateway'
     },
     503: {
-      title: '503 Service Unavailable',
-      subtitle: 'Temporary Maintenance',
-      desc: 'The service is temporarily unable to handle your request due to maintenance.'
+      img: '503',
+      heading: '503 Service unavailable',
+      message: 'Server is temporarily down. Please try after some time.',
+      title: '503 Service Unavailable'
     },
     504: {
-      title: '504 Gateway Timeout',
-      subtitle: 'Upstream Gateway Timeout',
-      desc: 'The gateway server did not receive a timely response from the backend service.'
+      img: '504',
+      heading: '504 Gateway timeout',
+      message: "Server didn't get a response in time. Please try after some time.",
+      title: '504 Gateway Timeout'
     },
     505: {
-      title: '505 HTTP Version Not Supported',
-      subtitle: 'Unsupported Protocol',
-      desc: 'The HTTP version used in the request is not supported by the web server.'
+      img: '505',
+      heading: '505 HTTP version not supported',
+      message: "Server doesn't support the HTTP version used by browser. Please use different browser.",
+      title: '505 HTTP Version Not Supported'
     }
   };
 
-  const err = errorMessages[activeCode] || errorMessages[404];
+  const spec = errorSpecs[activeCode] || errorSpecs[404];
 
   return (
-    <div style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '85vh',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+      }}
+    >
       <div
-        className="card"
         style={{
-          maxWidth: '560px',
-          width: '100%',
-          textAlign: 'center',
-          padding: '2.5rem',
-          boxShadow: 'var(--shadow-md)'
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '36px',
+          maxWidth: '920px',
+          width: '100%'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
-          <img src="/as_logo.webp" alt="Ascentracore" style={{ width: '42px', height: '42px' }} />
-          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            Ascentracore Solutions
-          </span>
-        </div>
+        {/* Status Illustration from Ascentracore CDN matching apis templates */}
+        <img
+          src={`https://cdn.ascentracoresolutions.com/status/${spec.img}.webp`}
+          alt={String(activeCode)}
+          style={{
+            width: '380px',
+            height: '380px',
+            maxWidth: '100%',
+            objectFit: 'contain'
+          }}
+        />
 
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '0.4rem 1rem', background: 'rgba(220,38,38,0.1)', color: 'var(--danger)', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem' }}>
-          <AlertOctagon size={18} />
-          <span>Error Status: {activeCode}</span>
-        </div>
-
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-          {customTitle || err.title}
-        </h1>
-
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.75rem' }}>
-          {customMessage || err.desc}
-          <br />
-          <span style={{ fontSize: '0.85rem' }}>Thank you for your patience.</span>
-        </p>
-
-        {/* Quick error code switcher to view all backend error pages (400-505) */}
-        <div style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', marginBottom: '1.75rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>
-            PREVIEW OTHER STATUS CODES
+        {/* Brand Header & Details */}
+        <div style={{ maxWidth: '460px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <img
+              src="https://cdn.ascentracoresolutions.com/ascentra.webp"
+              alt="logo"
+              style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+            />
+            <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-main, #1e293b)' }}>
+              Ascentracore Solutions
+            </span>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
-            {[400, 401, 403, 404, 408, 500, 502, 503, 504, 505].map(code => (
-              <button
-                key={code}
-                className={`btn btn-sm ${activeCode === code ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '2px 8px', fontSize: '0.75rem' }}
-                onClick={() => setActiveCode(code)}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <Link to="/" className="btn btn-primary">
-            <Home size={16} />
-            <span>Go to Dashboard</span>
-          </Link>
-          <button className="btn btn-secondary" onClick={() => navigate(-1)}>
-            <ArrowLeft size={16} />
-            <span>Back</span>
-          </button>
+          <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-main, #334155)', margin: '10px 0' }}>
+            {customTitle || spec.heading}
+          </p>
+
+          <p style={{ fontSize: '15px', color: 'var(--text-muted, #475569)', margin: '14px 0', lineHeight: '1.6' }}>
+            {customMessage || (
+              activeCode === 404 || activeCode === 500 ? (
+                <>
+                  Your requested url <b style={{ color: 'var(--primary, #0284c7)', wordBreak: 'break-all' }}>{location.pathname}</b> {activeCode === 404 ? 'was not found on this server. We will fix soon.' : 'has found an error. We will fix soon.'}
+                </>
+              ) : (
+                spec.message
+              )
+            )}
+          </p>
+
+          <p style={{ fontSize: '14px', color: 'var(--text-muted, #64748b)', margin: '12px 0' }}>
+            Thank you for your patience.
+          </p>
+
+          {/* Quick status code switcher for admin testing */}
+          <div style={{ margin: '18px 0', padding: '10px', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748b)', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              STATUS CODE TEMPLATES
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {[400, 401, 403, 404, 408, 500, 502, 503, 504, 505].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setActiveCode(c)}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '12px',
+                    borderRadius: '4px',
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    backgroundColor: activeCode === c ? 'var(--primary, #0284c7)' : 'transparent',
+                    color: activeCode === c ? '#ffffff' : 'var(--text-main, #334155)',
+                    borderColor: activeCode === c ? 'var(--primary, #0284c7)' : '#cbd5e1'
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
+            <Link
+              to="/"
+              className="btn btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                backgroundColor: 'var(--primary, #0284c7)',
+                color: '#ffffff',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '14px'
+              }}
+            >
+              <Home size={16} />
+              <span>Go to Dashboard</span>
+            </Link>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(-1)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 14px',
+                backgroundColor: '#f1f5f9',
+                color: '#334155',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontWeight: 500,
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default ErrorPage;

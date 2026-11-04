@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
-import { exchangeAuthorizationCode } from './pkce'
+import { exchangeAuthorizationCode, resolveAccountsUrl, resolveApiOrigin } from './pkce'
 import { useAuth } from '../context/AuthContext'
 
 export const AuthCallback: React.FC = () => {
@@ -9,6 +9,7 @@ export const AuthCallback: React.FC = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [error, setError] = useState<string | null>(null)
+  const isExecutingRef = useRef(false)
 
   useEffect(() => {
     const code = searchParams.get('code')
@@ -25,10 +26,13 @@ export const AuthCallback: React.FC = () => {
       return
     }
 
+    if (isExecutingRef.current) return
+    isExecutingRef.current = true
+
     const config = {
       clientId: 'admin',
-      accountsPortalUrl: (import.meta.env.VITE_ACCOUNTS_URL || 'http://localhost:5174').replace(/\/+$/, ''),
-      apiBaseUrl: (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, ''),
+      accountsPortalUrl: resolveAccountsUrl(import.meta.env.VITE_ACCOUNTS_URL),
+      apiBaseUrl: resolveApiOrigin(import.meta.env.VITE_API_BASE_URL),
       redirectUri: `${window.location.origin}/auth/callback`,
     }
 

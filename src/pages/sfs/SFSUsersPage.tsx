@@ -3,6 +3,7 @@ import { Search, Filter, Trash2, Mail, RefreshCw, Loader2, UserCheck } from 'luc
 import { api } from '../../services/api';
 import { initialUsers } from '../../data/mockData';
 import { User } from '../../types';
+import { getStImageUrl } from '../../utils/cdn';
 
 export const SFSUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -130,7 +131,7 @@ export const SFSUsersPage: React.FC = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
-                            src={u.profile || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                            src={getStImageUrl(u.profile)}
                             alt={u.name}
                             style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
                           />

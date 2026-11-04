@@ -9,7 +9,11 @@ import {
   Company,
   Course,
   Video,
-  Submission
+  Submission,
+  CompanyMockItem,
+  CompanyBlueprintItem,
+  QuestionItem,
+  AssessmentSectionItem
 } from '../types';
 import {
   initialUsers,
@@ -21,8 +25,12 @@ import {
   initialCompanies,
   initialCourses,
   initialVideos,
-  initialSubmissions
+  initialSubmissions,
+  initialCompanyMocks,
+  initialCompanyBlueprints
 } from '../data/mockData';
+import { getStImageUrl, getStVideoUrl } from '../utils/cdn';
+import { VideoComment } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -43,16 +51,20 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
     const token = typeof window !== 'undefined' ? (localStorage.getItem('as_access_token') || localStorage.getItem('access_token')) : null;
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
+    const baseHeaders: Record<string, string> = {
+      'Accept': 'application/json',
+      ...authHeaders,
+      ...(options?.headers as Record<string, string> || {})
+    };
+    if (!(options?.body instanceof FormData)) {
+      baseHeaders['Content-Type'] = 'application/json';
+    }
+
     const res = await fetch(`${API_BASE}${url}`, {
       ...options,
       credentials: 'include',
       signal: controller.signal,
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...(options?.headers || {})
-      }
+      headers: baseHeaders
     });
 
     clearTimeout(timeoutId);
@@ -78,6 +90,62 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
 }
 
 export const api = {
+  /**
+   * Direct upload asset to CDN / Cloudflare R2 endpoint with progress
+   */
+  async uploadCdnAsset(
+    file: File,
+    type: 'st_video' | 'st_image' | 'st_pdf' | 'sfs_image' | 'sfs_zip',
+    onProgress?: (percent: number) => void
+  ): Promise<{ status: boolean; filename: string; url: string; message?: string }> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('as_access_token') || localStorage.getItem('access_token')) : null;
+      
+      xhr.open('POST', `${API_BASE}/apps/skiltrix/api/actions/upload-cdn-asset/`);
+      xhr.withCredentials = true;
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            onProgress(percent);
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            resolve(data);
+          } catch {
+            reject(new Error('Invalid response from server'));
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.message || `Upload failed with status ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Network error during upload'));
+      };
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      xhr.send(formData);
+    });
+  },
+
   /**
    * Health / Connectivity check
    */
@@ -250,14 +318,41 @@ export const api = {
     return result.categories || initialCategories;
   },
 
-  async createCategory(data: { name: string; description: string; image?: string }) {
-    return fetchWithFallback(
+  async createCategory(
+    data: FormData | { name: string; description: string; image?: File | string; status?: string; id?: string }
+  ) {
+    let body: BodyInit;
+    if (data instanceof FormData) {
+      body = data;
+    } else {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      formData.append('description', data.description);
+      if (data.status) formData.append('status', data.status);
+      if (data.id) formData.append('id', data.id);
+      if (data.image instanceof File) {
+        formData.append('image', data.image);
+      } else if (data.image) {
+        formData.append('bp_img', data.image);
+      }
+      body = formData;
+    }
+
+    return fetchWithFallback<{ status: boolean; message: string; category_id?: string; bp_img?: string; image_url?: string }>(
       '/api/admin/categories/',
       {
         method: 'POST',
-        body: JSON.stringify(data)
+        body
       },
-      { status: true, message: 'Category created' }
+      { status: true, message: 'Category saved' }
+    );
+  },
+
+  async deleteCategory(id: string | number) {
+    return fetchWithFallback<{ status: boolean; message: string }>(
+      `/api/admin/categories/?id=${encodeURIComponent(String(id))}`,
+      { method: 'DELETE' },
+      { status: true, message: 'Category deleted' }
     );
   },
 
@@ -376,7 +471,7 @@ export const api = {
         company_id: i.company?.company_id || i.company_id || 'COMP_01',
         company: {
           name: i.company?.name || 'Ascentracore Solutions',
-          image: i.company?.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100'
+          image: i.company?.image ? getStImageUrl(i.company.image) : getStImageUrl('st/images/company-default.webp')
         },
         type: (i.type || 'remote') as 'remote' | 'offline' | 'hybrid',
         paid: i.is_paid ? 1 : 0,
@@ -486,9 +581,7 @@ export const api = {
       return result.map(c => ({
         company_id: c.company_id || String(c.id),
         name: c.name,
-        image: c.image && c.image.startsWith('http')
-          ? c.image
-          : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
+        image: c.image ? getStImageUrl(c.image) : getStImageUrl('st/images/company-default.webp'),
         description: c.description || '',
         status: (c.status || 'active') as 'active' | 'inactive',
         created_at: c.created_at ? c.created_at.split('T')[0] : '2026-10-01',
@@ -519,7 +612,7 @@ export const api = {
       return {
         company_id: res.company_id,
         name: res.name,
-        image: data.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
+        image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/company-default.webp'),
         description: res.description,
         status: res.status,
         created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -530,7 +623,7 @@ export const api = {
     return {
       company_id: `comp_${Date.now()}`,
       name: data.name,
-      image: data.image || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100',
+      image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/company-default.webp'),
       description: data.description || '',
       status: data.status || 'active',
       created_at: new Date().toISOString().split('T')[0],
@@ -560,9 +653,7 @@ export const api = {
       return result.map(c => ({
         course_id: c.course_id || String(c.id),
         name: c.name || 'Full Stack Engineering',
-        image: c.image && c.image.startsWith('http')
-          ? c.image
-          : 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',
+        image: c.image ? getStImageUrl(c.image) : getStImageUrl('st/images/course-default.webp'),
         type: (c.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         paid: c.is_paid ? 1 : 0,
         price: c.price,
@@ -598,7 +689,7 @@ export const api = {
       return {
         course_id: res.course_id,
         name: res.name,
-        image: data.image || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',
+        image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/course-default.webp'),
         type: (res.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         paid: res.is_paid ? 1 : 0,
         price: res.price,
@@ -611,7 +702,7 @@ export const api = {
     return {
       course_id: `crs_${Date.now()}`,
       name: data.name,
-      image: data.image || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',
+      image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/course-default.webp'),
       type: (data.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
       paid: data.paid || 0,
       price: data.price,
@@ -643,25 +734,25 @@ export const api = {
       return result.map(v => ({
         video_id: v.video_id || String(v.id),
         title: v.title,
-        image: v.image && v.image.startsWith('http')
-          ? v.image
-          : 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
-        video_url: v.video || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        course_id: v.course || 'crs_django',
+        image: v.image_url || (v.image ? getStImageUrl(v.image) : getStImageUrl('st/images/video-default.webp')),
+        video_url: v.video_url || (v.video ? getStVideoUrl(v.video) : ''),
+        course_id: v.course || 'crs_ts_mastery',
         course_name: v.course_name || 'Technical Curriculum',
         description: v.description || '',
         status: (v.status || 'active') as 'active' | 'inactive',
-        created_at: v.created_at ? v.created_at.split('T')[0] : '2026-10-01'
+        created_at: v.created_at ? v.created_at.split('T')[0] : '2026-10-01',
+        comments_count: v.comments_count || (Array.isArray(v.comments) ? v.comments.length : 0)
       }));
     }
     return initialVideos;
   },
 
-  async createVideo(data: { title: string; description?: string; image?: string; course_id?: string }): Promise<Video> {
+  async createVideo(data: { title: string; description?: string; video?: string; image?: string; course_id?: string }): Promise<Video> {
     const payload = {
       title: data.title,
       description: data.description || '',
-      image: (data.image || 'video_thumb.webp').slice(0, 50),
+      video: data.video || '',
+      image: data.image || 'video_thumb.webp',
       course_id: data.course_id
     };
 
@@ -678,13 +769,14 @@ export const api = {
       return {
         video_id: res.video_id,
         title: res.title,
-        image: data.image || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
-        video_url: res.video || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        course_id: res.course || data.course_id || 'crs_django',
+        image: res.image_url || (res.image ? getStImageUrl(res.image) : getStImageUrl('st/images/video-default.webp')),
+        video_url: res.video_url || (res.video ? getStVideoUrl(res.video) : ''),
+        course_id: res.course || data.course_id || 'crs_ts_mastery',
         course_name: res.course_name || 'Technical Curriculum',
         description: res.description,
         status: res.status || 'active',
-        created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+        created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+        comments_count: 0
       };
     }
 
@@ -692,17 +784,74 @@ export const api = {
       video_id: `vid_${Date.now()}`,
       title: data.title,
       description: data.description || '',
-      image: data.image || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400',
-      course_id: data.course_id || 'crs_django',
+      image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/video-default.webp'),
+      video_url: data.video ? getStVideoUrl(data.video) : '',
+      course_id: data.course_id || 'crs_ts_mastery',
       course_name: 'Technical Curriculum',
       status: 'active',
-      created_at: new Date().toISOString().split('T')[0]
+      created_at: new Date().toISOString().split('T')[0],
+      comments_count: 0
     };
   },
 
   async deleteVideo(id: string): Promise<boolean> {
     return fetchWithFallback<boolean>(
       `/apps/skiltrix/api/videos/${id}/`,
+      { method: 'DELETE' },
+      true
+    );
+  },
+
+  /**
+   * SkilTrix Comments APIs
+   */
+  async getComments(videoId?: string): Promise<VideoComment[]> {
+    const query = videoId ? `?video_id=${encodeURIComponent(videoId)}` : '';
+    const res = await fetchWithFallback<any[]>(
+      `/apps/skiltrix/api/comments/${query}`,
+      { method: 'GET' },
+      []
+    );
+    if (Array.isArray(res)) {
+      return res.map(c => ({
+        id: c.id,
+        comment: c.comment,
+        video_id: c.video_id || c.video,
+        video_title: c.video_title || 'Video Lecture',
+        user: c.user,
+        user_name: c.user_name || 'Learner',
+        created_at: c.created_at ? c.created_at.split('T')[0] : 'Just now'
+      }));
+    }
+    return [];
+  },
+
+  async createComment(data: { video_id: string; comment: string }): Promise<VideoComment | null> {
+    const res = await fetchWithFallback<any>(
+      '/apps/skiltrix/api/comments/',
+      {
+        method: 'POST',
+        body: JSON.stringify(data)
+      },
+      null
+    );
+    if (res && res.id) {
+      return {
+        id: res.id,
+        comment: res.comment,
+        video_id: res.video_id || res.video,
+        video_title: res.video_title || 'Video Lecture',
+        user: res.user,
+        user_name: res.user_name || 'Admin',
+        created_at: res.created_at ? res.created_at.split('T')[0] : 'Just now'
+      };
+    }
+    return null;
+  },
+
+  async deleteComment(id: number | string): Promise<boolean> {
+    return fetchWithFallback<boolean>(
+      `/apps/skiltrix/api/comments/${id}/`,
       { method: 'DELETE' },
       true
     );
@@ -799,5 +948,224 @@ export const api = {
         submissions: initialSubmissions.length
       };
     }
+  },
+
+  /**
+   * SkilTrix Company Mocks APIs
+   */
+  async getCompanyMocks(): Promise<CompanyMockItem[]> {
+    const result = await fetchWithFallback<any>(
+      '/apps/skiltrix/api/assessments/',
+      { method: 'GET' },
+      initialCompanyMocks
+    );
+
+    const list = Array.isArray(result) ? result : (result?.results || initialCompanyMocks);
+    if (Array.isArray(list) && list.length > 0) {
+      return list.map((item: any) => ({
+        id: item.id,
+        assessment_id: item.assessment_id || `asmt_${item.slug}`,
+        title: item.title,
+        slug: item.slug,
+        category: item.category || 'Company Mocks',
+        company_tag: item.company_tag || 'General SDE',
+        description: item.description || '',
+        difficulty: item.difficulty || 'Medium',
+        duration_minutes: item.duration_minutes || 90,
+        pass_percentage: item.pass_percentage || 70,
+        total_marks: item.total_marks || 100,
+        is_company_mock: item.is_company_mock ?? true,
+        is_pro_only: item.is_pro_only ?? false,
+        proctoring_enabled: item.proctoring_enabled ?? true,
+        active: item.active ?? true,
+        sections_count: item.section_count || item.sections?.length || 0,
+        questions_count: item.question_count || item.questions_count || 0,
+        created_at: item.created_at ? item.created_at.split('T')[0] : '2026-10-01'
+      }));
+    }
+    return initialCompanyMocks;
+  },
+
+  async createCompanyMock(data: Partial<CompanyMockItem>): Promise<CompanyMockItem> {
+    const title = data.title || 'Company Mock Assessment';
+    const payload = {
+      assessment_id: data.assessment_id || `asmt_mock_${Date.now()}`,
+      title,
+      slug: data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      category: data.category || 'Company Mocks',
+      company_tag: data.company_tag || 'General SDE',
+      description: data.description || '',
+      difficulty: (data.difficulty || 'Medium') as 'Easy' | 'Medium' | 'Hard',
+      duration_minutes: Number(data.duration_minutes) || 90,
+      pass_percentage: Number(data.pass_percentage) || 70,
+      total_marks: Number(data.total_marks) || 100,
+      is_company_mock: true,
+      is_pro_only: Boolean(data.is_pro_only),
+      proctoring_enabled: Boolean(data.proctoring_enabled ?? true),
+      active: Boolean(data.active ?? true),
+    };
+
+    const res = await fetchWithFallback<any>(
+      '/apps/skiltrix/api/assessments/',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      null
+    );
+
+    if (res && res.assessment_id) {
+      return {
+        ...payload,
+        id: res.id,
+        sections_count: 0,
+        questions_count: 0,
+      };
+    }
+
+    return {
+      ...payload,
+      id: Date.now(),
+      sections_count: 0,
+      questions_count: 0,
+    };
+  },
+
+  async deleteCompanyMock(id: string | number): Promise<boolean> {
+    return await fetchWithFallback<boolean>(
+      `/apps/skiltrix/api/assessments/${id}/`,
+      { method: 'DELETE' },
+      true
+    );
+  },
+
+  /**
+   * SkilTrix Company Blueprints APIs
+   */
+  async getCompanyBlueprints(): Promise<CompanyBlueprintItem[]> {
+    const result = await fetchWithFallback<any>(
+      '/apps/skiltrix/api/blueprints/',
+      { method: 'GET' },
+      initialCompanyBlueprints
+    );
+
+    const list = Array.isArray(result) ? result : (result?.results || initialCompanyBlueprints);
+    if (Array.isArray(list) && list.length > 0) {
+      return list.map((item: any) => ({
+        id: item.id,
+        blueprint_id: item.blueprint_id || item.slug,
+        company_name: item.company_name,
+        slug: item.slug,
+        description: item.description || '',
+        category: item.category || 'Company Mocks',
+        sections_config: Array.isArray(item.sections_config) ? item.sections_config : [],
+        recommended_topics: Array.isArray(item.recommended_topics) ? item.recommended_topics : [],
+        duration_minutes: item.duration_minutes || 90,
+        tier: (item.tier || 'free') as 'free' | 'pro',
+        icon_name: item.icon_name || 'briefcase',
+        is_active: item.is_active ?? true,
+        created_at: item.created_at ? item.created_at.split('T')[0] : '2026-10-01',
+        mock_linked: true
+      }));
+    }
+    return initialCompanyBlueprints;
+  },
+
+  async createCompanyBlueprint(data: Partial<CompanyBlueprintItem>): Promise<CompanyBlueprintItem> {
+    const company_name = data.company_name || 'Company Blueprint';
+    const payload = {
+      blueprint_id: data.blueprint_id || `bp_${data.slug || Date.now()}`,
+      company_name,
+      slug: data.slug || company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description: data.description || '',
+      category: data.category || 'Company Mocks',
+      sections_config: data.sections_config || [],
+      recommended_topics: data.recommended_topics || ['DSA', 'CS Fundamentals'],
+      duration_minutes: Number(data.duration_minutes) || 90,
+      tier: (data.tier || 'free') as 'free' | 'pro',
+      icon_name: data.icon_name || 'briefcase',
+      is_active: Boolean(data.is_active ?? true)
+    };
+
+    const res = await fetchWithFallback<any>(
+      '/apps/skiltrix/api/blueprints/',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      null
+    );
+
+    if (res && res.blueprint_id) {
+      return { ...payload, id: res.id, mock_linked: false };
+    }
+
+    return { ...payload, id: Date.now(), mock_linked: false };
+  },
+
+  async deleteCompanyBlueprint(id: string | number): Promise<boolean> {
+    return await fetchWithFallback<boolean>(
+      `/apps/skiltrix/api/blueprints/${id}/`,
+      { method: 'DELETE' },
+      true
+    );
+  },
+
+  async updateCompanyMock(id: string | number, data: Partial<CompanyMockItem>): Promise<CompanyMockItem> {
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/assessments/${id}/`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      },
+      data as any
+    );
+    return res as CompanyMockItem;
+  },
+
+  async getMockQuestions(assessmentId: string | number): Promise<QuestionItem[]> {
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/assessments/${assessmentId}/questions/`,
+      { method: 'GET' },
+      []
+    );
+    return Array.isArray(res) ? res : (res?.results || []);
+  },
+
+  async addMockQuestion(assessmentId: string | number, data: Partial<QuestionItem>): Promise<QuestionItem> {
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/assessments/${assessmentId}/add_question/`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data)
+      },
+      {
+        item_id: `q_${Date.now()}`,
+        title: data.title || 'New Question',
+        marks: data.marks || 10,
+        prompt: data.prompt || '',
+        question_type: data.question_type || 'mcq_single',
+        order: 1,
+        ...data
+      } as any
+    );
+    return res as QuestionItem;
+  },
+
+  async deleteQuestion(itemId: string | number): Promise<boolean> {
+    return await fetchWithFallback<boolean>(
+      `/apps/skiltrix/api/questions/${itemId}/`,
+      { method: 'DELETE' },
+      true
+    );
+  },
+
+  async getMockSections(assessmentId: string | number): Promise<AssessmentSectionItem[]> {
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/sections/?assessment_id=${assessmentId}`,
+      { method: 'GET' },
+      []
+    );
+    return Array.isArray(res) ? res : (res?.results || []);
   }
 };

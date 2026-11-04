@@ -22,6 +22,7 @@ import { User } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api';
+import { getStImageUrl } from '../../utils/cdn';
 
 export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -44,7 +45,7 @@ export const UsersPage: React.FC = () => {
     platform: 'Web',
     platform_name: 'Chrome on Windows',
     status: 'approved' as 'approved' | 'pending' | 'disapproved',
-    profile: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+    profile: getStImageUrl('st/images/user-default.webp')
   });
 
   const fetchUsers = async () => {
@@ -145,7 +146,7 @@ export const UsersPage: React.FC = () => {
       platform: 'Web',
       platform_name: 'Chrome on Windows',
       status: 'approved',
-      profile: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+      profile: getStImageUrl('st/images/user-default.webp')
     });
   };
 
@@ -306,7 +307,7 @@ export const UsersPage: React.FC = () => {
                   <tr key={user.id} onClick={() => setSelectedUser(user)} style={{ cursor: 'pointer' }}>
                     <td>
                       <img
-                        src={user.profile || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                        src={getStImageUrl(user.profile)}
                         alt={user.name}
                         style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
                       />
@@ -442,7 +443,7 @@ export const UsersPage: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
               <img
-                src={selectedUser.profile || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                src={getStImageUrl(selectedUser.profile)}
                 alt={selectedUser.name}
                 style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }}
               />

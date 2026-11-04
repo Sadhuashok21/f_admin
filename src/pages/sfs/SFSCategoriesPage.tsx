@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FolderTree, RefreshCw, Trash2, Rocket } from 'lucide-react';
+import { Plus, FolderTree, RefreshCw, Trash2, Rocket, Edit2 } from 'lucide-react';
 import { initialCategories } from '../../data/mockData';
 import { BlueprintCategory } from '../../types';
 import { api } from '../../services/api';
+import { getSfsImageUrl } from '../../utils/cdn';
 
 export const SFSCategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<BlueprintCategory[]>(initialCategories);
@@ -29,8 +30,13 @@ export const SFSCategoriesPage: React.FC = () => {
     fetchCategories();
   }, []);
 
-  const handleDelete = (id: string | number) => {
+  const handleDelete = async (id: string | number) => {
     if (window.confirm('Delete this category?')) {
+      try {
+        await api.deleteCategory(id);
+      } catch (err) {
+        console.warn('Backend category delete failed, updating local state:', err);
+      }
       setCategories(prev => prev.filter(c => c.id !== id));
     }
   };
@@ -78,7 +84,7 @@ export const SFSCategoriesPage: React.FC = () => {
           <div key={cat.id || cat.bp_name} className="card" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ height: '160px', width: '100%', position: 'relative' }}>
               <img
-                src={cat.bp_img || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400'}
+                src={getSfsImageUrl(cat.bp_img)}
                 alt={cat.bp_name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -131,6 +137,14 @@ export const SFSCategoriesPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {String(cat.id).slice(0, 10)}</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                  <Link
+                    to={`/sfs/upload_category?edit=${cat.id}`}
+                    className="action-btn"
+                    title="Edit Category & Banner Image"
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Edit2 size={16} />
+                  </Link>
                   <button
                     className="action-btn delete"
                     title="Delete Category"

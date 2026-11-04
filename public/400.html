@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>400 Bad Request || Ascentracore Solutions</title>
+    <link rel="stylesheet" href="/errors.css">
+    <link rel="icon" href="https://cdn.ascentracoresolutions.com/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <img src="https://cdn.ascentracoresolutions.com/status/400.webp" alt="400" class="error_img">
+
+            <div class="logo">
+                <div class="logo_img">
+                    <img src="https://cdn.ascentracoresolutions.com/ascentra.webp" class="as_logo" alt="logo">
+                    &ensp;Ascentracore Solutions
+                </div>
+                <br>
+                <p>400 Bad request</p>
+                <br>
+                <br>
+                <p>The request is malformed. Please refresh or try after some time.</p>
+                <br>
+                <p>Thank you for your patience.</p>
+                <br>
+                <a href="/" style="display:inline-block; margin-top:8px; padding:8px 16px; background:#0f172a; color:#ffffff; border-radius:6px; text-decoration:none; font-size:14px; font-weight:500;">Return to Homepage</a>
+            </div>
+        </div>
+    </div>
+    <script>
+      try {
+        var el = document.getElementById('req-path');
+        if (el && window.location.pathname) el.textContent = window.location.pathname;
+      } catch(e) {}
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { StatCard } from '../../components/common/StatCard';
 import { api } from '../../services/api';
 import { initialBlueprints, initialCategories } from '../../data/mockData';
 import { Blueprint, BlueprintCategory } from '../../types';
+import { getSfsImageUrl } from '../../utils/cdn';
 
 export const SFSOverviewPage: React.FC = () => {
   const [blueprints, setBlueprints] = useState<Blueprint[]>([]);
@@ -157,7 +158,7 @@ export const SFSOverviewPage: React.FC = () => {
                     <td style={{ fontWeight: 600 }}>{cat.bp_name}</td>
                     <td>
                       <img
-                        src={cat.bp_img || 'https://images.unsplash.com/photo-1517976487502-5731f30bc482?w=400'}
+                        src={getSfsImageUrl(cat.bp_img)}
                         alt={cat.bp_name}
                         style={{ width: '80px', height: '48px', objectFit: 'cover', borderRadius: '6px' }}
                       />
@@ -212,7 +213,7 @@ export const SFSOverviewPage: React.FC = () => {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
-                          src={bp.image}
+                          src={getSfsImageUrl(bp.image)}
                           alt={bp.name}
                           className="blueprint_img"
                           style={{ width: '64px', height: '44px', objectFit: 'cover', borderRadius: '6px' }}
