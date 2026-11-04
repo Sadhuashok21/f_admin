@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { initialBlueprints } from '../../data/mockData';
 import { Blueprint } from '../../types';
 import { Modal } from '../../components/common/Modal';
+import { getSfsImageUrl } from '../../utils/cdn';
 
 export const SFSEditBlueprintPage: React.FC = () => {
   const location = useLocation();
@@ -63,9 +64,7 @@ export const SFSEditBlueprintPage: React.FC = () => {
         setFakeShares(bp.fshare ?? (bp.share || 0));
 
         setImages([
-          bp.image,
-          'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=400',
-          'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400'
+          bp.image ? getSfsImageUrl(bp.image) : '',
         ].filter(Boolean));
       } catch {
         const fallback = initialBlueprints.find(b => b.bp_id === bpId) || initialBlueprints[0];
@@ -210,15 +209,14 @@ export const SFSEditBlueprintPage: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="sfs_link">
-              SFS Sharing Link <span className="star">*</span>
+              SFS Sharing Link <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', fontWeight: 'normal' }}>(Optional)</span>
             </label>
             <textarea
               id="sfs_link"
               className="form-textarea"
               value={sfsLink}
               onChange={e => setSfsLink(e.target.value)}
-              placeholder="https://sharing.spaceflightsimulator.app/rocket/..."
-              required
+              placeholder="https://sharing.spaceflightsimulator.app/rocket/... (Optional)"
             />
           </div>
         </div>

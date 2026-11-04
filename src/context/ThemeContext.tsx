@@ -22,9 +22,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (theme === 'dark') {
       document.body.classList.add('active', 'dark');
       document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.style.colorScheme = 'dark';
     } else {
       document.body.classList.remove('active', 'dark');
       document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.style.colorScheme = 'light';
     }
   }, [theme]);
 

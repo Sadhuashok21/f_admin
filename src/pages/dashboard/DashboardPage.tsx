@@ -15,6 +15,7 @@ import { User } from '../../types';
 import { initialUsers } from '../../data/mockData';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
+import { getStImageUrl } from '../../utils/cdn';
 
 const toDateInputValue = (date: Date) => {
   const year = date.getFullYear();
@@ -500,7 +501,7 @@ export const DashboardPage: React.FC = () => {
                 <tr key={u.id}>
                   <td>
                     <img
-                      src={u.profile || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                      src={getStImageUrl(u.profile)}
                       alt={u.name}
                       style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
                     />

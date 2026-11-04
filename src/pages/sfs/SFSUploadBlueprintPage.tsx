@@ -157,16 +157,15 @@ export const SFSUploadBlueprintPage: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="link">
-              SFS App Sharing URL <span className="star">*</span>
+              SFS Sharing Link <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', fontWeight: 'normal' }}>(Optional)</span>
             </label>
             <input
               type="url"
               id="link"
               className="form-input"
-              placeholder="https://sharing.spaceflightsimulator.app/rocket/..."
+              placeholder="https://sharing.spaceflightsimulator.app/rocket/... (Optional)"
               value={link}
               onChange={e => setLink(e.target.value)}
-              required
             />
           </div>
 

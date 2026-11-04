@@ -19,6 +19,7 @@ import {
   Briefcase,
   BookOpen,
   Film,
+  MessageSquare,
   Building2,
   Code2,
   Languages,
@@ -26,7 +27,9 @@ import {
   Bug,
   Activity,
   FileCheck,
-  BadgeIndianRupee
+  BadgeIndianRupee,
+  Layers,
+  Award
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -92,6 +95,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             <NavLink to="/sfs/planets" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <Globe2 size={18} />
               <span className="sidebar_icons_name">Planets & Worlds</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/sfs/mods" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <Hammer size={18} />
+              <span className="sidebar_icons_name">Mods</span>
             </NavLink>
           </li>
           <li>
@@ -175,6 +184,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             </NavLink>
           </li>
           <li>
+            <NavLink to="/skiltrix/comments" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <MessageSquare size={18} />
+              <span className="sidebar_icons_name">Comments</span>
+            </NavLink>
+          </li>
+          <li>
             <NavLink to="/skiltrix/companies" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <Building2 size={18} />
               <span className="sidebar_icons_name">Companies</span>
@@ -208,6 +223,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             <NavLink to="/skiltrix/submissions" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <FileCheck size={18} />
               <span className="sidebar_icons_name">Submissions</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/mocks" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <Award size={18} />
+              <span className="sidebar_icons_name">Company Mocks</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/companyblueprint" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <Layers size={18} />
+              <span className="sidebar_icons_name">Company Blueprints</span>
             </NavLink>
           </li>
           <li>

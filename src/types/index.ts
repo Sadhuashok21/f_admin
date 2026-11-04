@@ -23,7 +23,7 @@ export interface Blueprint {
     email?: string;
   };
   image: string;
-  type: 'blueprint' | 'planet' | 'bp';
+  type: 'blueprint' | 'planet' | 'mod' | 'bp' | string;
   categories: string[];
   downloads: number;
   likes: number;
@@ -97,6 +97,18 @@ export interface Video {
   description: string;
   status: 'active' | 'inactive';
   created_at: string;
+  comments_count?: number;
+}
+
+export interface VideoComment {
+  id: number;
+  comment: string;
+  video?: string;
+  video_id: string;
+  video_title?: string;
+  user?: string;
+  user_name?: string;
+  created_at?: string;
 }
 
 export interface Language {
@@ -185,4 +197,82 @@ export interface Submission {
   status: 'pending' | 'approved' | 'rejected';
   language?: string;
   code?: string;
+}
+
+export interface AssessmentSectionItem {
+  id?: number | string;
+  section_id: string;
+  title: string;
+  section_type: string;
+  order: number;
+  duration_minutes: number;
+  total_marks: number;
+}
+
+export interface CompanyMockItem {
+  id?: number | string;
+  assessment_id: string;
+  title: string;
+  slug: string;
+  category: string;
+  company_tag: string;
+  description: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  duration_minutes: number;
+  pass_percentage: number;
+  total_marks: number;
+  negative_marking_percentage?: number;
+  is_company_mock: boolean;
+  is_pro_only: boolean;
+  proctoring_enabled: boolean;
+  active: boolean;
+  sections?: AssessmentSectionItem[];
+  question_items?: any[];
+  sections_count?: number;
+  questions_count?: number;
+  created_at?: string;
+}
+
+export interface CompanyBlueprintItem {
+  id?: number | string;
+  blueprint_id: string;
+  company_name: string;
+  slug: string;
+  description: string;
+  category: string;
+  sections_config: Array<{
+    title: string;
+    type: string;
+    marks: number;
+    duration?: number;
+    count?: number;
+  }>;
+  recommended_topics: string[];
+  duration_minutes: number;
+  tier: 'free' | 'pro';
+  icon_name: string;
+  is_active: boolean;
+  created_at?: string;
+  mock_linked?: boolean;
+}
+
+export interface QuestionItem {
+  id?: number | string;
+  item_id: string;
+  section?: number | string;
+  question_type: string;
+  title: string;
+  prompt: string;
+  options?: Array<{ id: string; text: string }>;
+  correct_answers?: string[];
+  explanation?: string;
+  order?: number;
+  marks: number;
+  negative_marks?: number;
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  starter_code?: string;
+  reference_solution?: string;
+  buggy_code?: string;
+  error_message?: string;
+  expected_behavior?: string;
 }

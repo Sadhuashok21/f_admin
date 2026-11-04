@@ -4,9 +4,10 @@ import { Plus, Edit2, Trash2, ExternalLink, Filter, Search } from 'lucide-react'
 import { initialBlueprints } from '../../data/mockData';
 import { Blueprint } from '../../types';
 import { api } from '../../services/api';
+import { getSfsImageUrl } from '../../utils/cdn';
 
 interface SFSBlueprintsPageProps {
-  filterType?: 'blueprint' | 'planet';
+  filterType?: 'blueprint' | 'planet' | 'mod';
   pageTitle?: string;
 }
 
@@ -165,7 +166,7 @@ export const SFSBlueprintsPage: React.FC<SFSBlueprintsPageProps> = ({
                     <td>
                       <div className="bp_image" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
-                          src={bp.image}
+                          src={getSfsImageUrl(bp.image)}
                           alt={bp.name}
                           className="blueprint_img"
                           style={{ width: '70px', height: '48px', objectFit: 'cover', borderRadius: '6px' }}

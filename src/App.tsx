@@ -27,12 +27,15 @@ import { SkiltrixOverviewPage } from './pages/skiltrix/SkiltrixOverviewPage';
 import { SkiltrixInternshipsPage } from './pages/skiltrix/SkiltrixInternshipsPage';
 import { SkiltrixCoursesPage } from './pages/skiltrix/SkiltrixCoursesPage';
 import { SkiltrixVideosPage } from './pages/skiltrix/SkiltrixVideosPage';
+import { SkiltrixCommentsPage } from './pages/skiltrix/SkiltrixCommentsPage';
 import { SkiltrixCompaniesPage } from './pages/skiltrix/SkiltrixCompaniesPage';
 import { SkiltrixFileSystemPage } from './pages/skiltrix/SkiltrixFileSystemPage';
 import { SkiltrixLanguagesPage } from './pages/skiltrix/SkiltrixLanguagesPage';
 import { SkiltrixUsersPage } from './pages/skiltrix/SkiltrixUsersPage';
 import { SkiltrixSubmissionsPage } from './pages/skiltrix/SkiltrixSubmissionsPage';
 import { SkiltrixCompilerPricingPage } from './pages/skiltrix/SkiltrixCompilerPricingPage';
+import { SkiltrixMocksPage } from './pages/skiltrix/SkiltrixMocksPage';
+import { SkiltrixCompanyBlueprintsPage } from './pages/skiltrix/SkiltrixCompanyBlueprintsPage';
 
 // SonicOra Pages
 import { SonicoraOverviewPage } from './pages/sonicora/SonicoraOverviewPage';
@@ -78,7 +81,8 @@ export const App: React.FC = () => {
               {/* SFS Module Routes */}
               <Route path="/sfs" element={<SFSOverviewPage />} />
               <Route path="/sfs/blueprints" element={<SFSBlueprintsPage />} />
-              <Route path="/sfs/planets" element={<SFSBlueprintsPage />} />
+              <Route path="/sfs/planets" element={<SFSBlueprintsPage filterType="planet" pageTitle="Planets & Worlds" />} />
+              <Route path="/sfs/mods" element={<SFSBlueprintsPage filterType="mod" pageTitle="Mods" />} />
               <Route path="/sfs/edit_bp" element={<SFSEditBlueprintPage />} />
               <Route path="/sfs/upload_bp" element={<SFSUploadBlueprintPage />} />
               <Route path="/sfs/categories" element={<SFSCategoriesPage />} />
@@ -92,6 +96,7 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/internships" element={<SkiltrixInternshipsPage />} />
               <Route path="/skiltrix/courses" element={<SkiltrixCoursesPage />} />
               <Route path="/skiltrix/videos" element={<SkiltrixVideosPage />} />
+              <Route path="/skiltrix/comments" element={<SkiltrixCommentsPage />} />
               <Route path="/skiltrix/companies" element={<SkiltrixCompaniesPage />} />
               <Route path="/skiltrix/code" element={<SkiltrixFileSystemPage />} />
               <Route path="/skiltrix/file-system" element={<SkiltrixFileSystemPage />} />
@@ -99,6 +104,12 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/users" element={<SkiltrixUsersPage />} />
               <Route path="/skiltrix/submissions" element={<SkiltrixSubmissionsPage />} />
               <Route path="/skiltrix/compiler-pricing" element={<SkiltrixCompilerPricingPage />} />
+              <Route path="/skiltrix/mocks" element={<SkiltrixMocksPage />} />
+              <Route path="/skiltrix/assessments" element={<SkiltrixMocksPage />} />
+              <Route path="/skiltrix/companyblueprint" element={<SkiltrixCompanyBlueprintsPage />} />
+              <Route path="/skiltrix/companyblueprint/*" element={<SkiltrixCompanyBlueprintsPage />} />
+              <Route path="/skiltrix/companyblueprints" element={<SkiltrixCompanyBlueprintsPage />} />
+              <Route path="/skiltrix/blueprints" element={<SkiltrixCompanyBlueprintsPage />} />
 
               {/* SonicOra Module Routes */}
               <Route path="/sonicora" element={<SonicoraOverviewPage />} />

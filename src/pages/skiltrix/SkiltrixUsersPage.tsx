@@ -3,6 +3,7 @@ import { Search, Loader2, RefreshCw, Mail, GraduationCap } from 'lucide-react';
 import { api } from '../../services/api';
 import { initialUsers } from '../../data/mockData';
 import { User } from '../../types';
+import { getStImageUrl } from '../../utils/cdn';
 
 export const SkiltrixUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -98,7 +99,7 @@ export const SkiltrixUsersPage: React.FC = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
-                            src={u.profile || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                            src={getStImageUrl(u.profile)}
                             alt={u.name}
                             style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
                           />
