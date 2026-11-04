@@ -40,10 +40,12 @@ export interface Blueprint {
 
 export interface BlueprintCategory {
   id: number | string;
+  category_id?: string;
   bp_name: string;
   bp_img: string;
   bp_para: string;
   status: 'approved' | 'disapproved';
+  blueprint_count?: number;
 }
 
 export interface Internship {

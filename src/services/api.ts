@@ -275,6 +275,26 @@ export const api = {
     return result.blueprints || initialBlueprints;
   },
 
+  async getPaginatedBlueprints(params?: { search?: string; type?: string; status?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.type) query.append('type', params.type);
+    if (params?.status) query.append('status', params.status);
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+
+    const result = await fetchWithFallback<{ status: boolean; total: number; blueprints: Blueprint[] }>(
+      `/api/admin/blueprints/?${query.toString()}`,
+      { method: 'GET' },
+      { status: true, total: initialBlueprints.length, blueprints: initialBlueprints }
+    );
+
+    return {
+      total: result.total ?? (result.blueprints?.length || initialBlueprints.length),
+      blueprints: result.blueprints || initialBlueprints,
+    };
+  },
+
   async getBlueprint(bpId: string): Promise<Blueprint | null> {
     const result = await fetchWithFallback<{ status: boolean; blueprint?: Blueprint }>(
       `/api/admin/blueprints/${bpId}/`,
@@ -303,6 +323,17 @@ export const api = {
       `/api/admin/blueprints/${bpId}/`,
       { method: 'DELETE' },
       { status: true, message: 'Blueprint deleted' }
+    );
+  },
+
+  async uploadBlueprint(formData: FormData) {
+    return fetchWithFallback<{ status: boolean; message?: string; bp_id?: string; image_url?: string; zip_url?: string }>(
+      '/apps/sfs/upload/',
+      {
+        method: 'POST',
+        body: formData
+      },
+      { status: true, message: 'Blueprint uploaded' }
     );
   },
 
