@@ -112,7 +112,7 @@ export const SkiltrixCompanyBlueprintsPage: React.FC = () => {
         active: true,
         description: bp.description,
       });
-      setSyncStatus(`✓ Successfully generated mock for ${bp.company_name}`);
+      setSyncStatus(`Successfully generated mock for ${bp.company_name}`);
       setTimeout(() => setSyncStatus(null), 3500);
     } catch (err) {
       console.error('Failed to sync mock:', err);

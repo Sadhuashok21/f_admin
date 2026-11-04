@@ -186,6 +186,7 @@ export const SFSEditBlueprintPage: React.FC = () => {
               >
                 <option value="blueprint">Rocket Blueprint</option>
                 <option value="planet">Planet & Custom Worlds</option>
+                <option value="mod">Mods & Addons</option>
                 <option value="bp">General SFS Craft</option>
               </select>
             </div>
