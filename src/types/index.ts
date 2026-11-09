@@ -23,6 +23,8 @@ export interface Blueprint {
     email?: string;
   };
   image: string;
+  image_url?: string;
+  images?: string[];
   type: 'blueprint' | 'planet' | 'mod' | 'bp' | string;
   categories: string[];
   downloads: number;
@@ -277,4 +279,32 @@ export interface QuestionItem {
   buggy_code?: string;
   error_message?: string;
   expected_behavior?: string;
+}
+
+export interface ContactSubmission {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  service?: string;
+  budget?: string;
+  subject?: string;
+  message?: string;
+  features?: string;
+  tech_stack?: string;
+  deployment?: string;
+  source_page: string;
+  status: 'pending' | 'contacted' | 'in_progress' | 'completed' | 'archived';
+  notes?: string;
+  ip_address?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ContactMetrics {
+  total: number;
+  pending: number;
+  contacted: number;
+  in_progress: number;
+  completed: number;
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Trash2, Upload, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Upload, CheckCircle2, AlertCircle, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { api } from '../../services/api';
 import { initialBlueprints } from '../../data/mockData';
 import { Blueprint } from '../../types';
@@ -36,6 +36,8 @@ export const SFSEditBlueprintPage: React.FC = () => {
   const [fakeShares, setFakeShares] = useState(0);
 
   const [images, setImages] = useState<string[]>([]);
+  const [activePreviewIdx, setActivePreviewIdx] = useState(0);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -63,9 +65,13 @@ export const SFSEditBlueprintPage: React.FC = () => {
         setFakeDownloads(bp.fdownloads ?? bp.downloads);
         setFakeShares(bp.fshare ?? (bp.share || 0));
 
-        setImages([
-          bp.image ? getSfsImageUrl(bp.image) : '',
-        ].filter(Boolean));
+        let allImgs: string[] = [];
+        if (bp.images && Array.isArray(bp.images) && bp.images.length > 0) {
+          allImgs = bp.images.map(img => getSfsImageUrl(img));
+        } else if (bp.image) {
+          allImgs = [getSfsImageUrl(bp.image)];
+        }
+        setImages(allImgs.filter(Boolean));
       } catch {
         const fallback = initialBlueprints.find(b => b.bp_id === bpId) || initialBlueprints[0];
         setBlueprint(fallback);
@@ -80,6 +86,43 @@ export const SFSEditBlueprintPage: React.FC = () => {
 
     loadBlueprint();
   }, [bpId]);
+
+  const handleUploadAdditionalImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingImg(true);
+    try {
+      const fileArray = Array.from(files);
+      const res = await api.uploadBlueprintImages(bpId, fileArray);
+      if (res && res.status && res.images && res.images.length > 0) {
+        setImages(res.images);
+      } else {
+        const newUrls = fileArray.map(f => URL.createObjectURL(f));
+        setImages(prev => [...prev, ...newUrls]);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to upload screenshots:', err);
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const handleRemoveImage = async (imgUrl: string, index: number) => {
+    if (images.length <= 1) {
+      alert("At least one screenshot must be retained as the cover image.");
+      return;
+    }
+    if (!window.confirm("Remove this screenshot from the blueprint gallery?")) return;
+    try {
+      await api.deleteBlueprintImage(bpId, imgUrl);
+    } catch (e) {
+      console.error("Delete screenshot error:", e);
+    }
+    setImages(prev => prev.filter((_, idx) => idx !== index));
+    if (activePreviewIdx >= index && activePreviewIdx > 0) {
+      setActivePreviewIdx(activePreviewIdx - 1);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -313,48 +356,218 @@ export const SFSEditBlueprintPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Gallery / Images matching edit_bp.html and blueprint.html */}
+        {/* Gallery / Images (Multi-Screenshot Preview Gallery) */}
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">Craft Screenshots & Media</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 className="card-title">Craft Screenshots & Media Gallery</h2>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                ({images.length} screenshot{images.length !== 1 ? 's' : ''})
+              </span>
+            </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsModalOpen(true)}>
               <Upload size={14} />
-              <span>Upload New Image</span>
+              <span>+ Add Screenshots</span>
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {images.map((img, i) => (
-              <div key={i} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+          {images.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Main Active Screenshot Preview */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '280px',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  background: '#090d16',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
                 <img
-                  src={img}
-                  alt={`Screenshot ${i + 1}`}
-                  style={{ width: '160px', height: '110px', objectFit: 'cover' }}
+                  src={images[activePreviewIdx] || images[0]}
+                  alt={`Preview ${activePreviewIdx + 1}`}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                 />
-                <button
-                  type="button"
+
+                {/* Badge Indicator */}
+                <div
                   style={{
                     position: 'absolute',
-                    top: '4px',
-                    right: '4px',
-                    background: 'rgba(0,0,0,0.6)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '24px',
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    top: '10px',
+                    left: '10px',
+                    background: activePreviewIdx === 0 ? 'rgba(37,99,235,0.92)' : 'rgba(0,0,0,0.75)',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '6px'
                   }}
-                  onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
-                  title="Remove image"
                 >
-                  ×
+                  {activePreviewIdx === 0 ? '★ Primary Cover Image' : `Screenshot #${activePreviewIdx + 1}`}
+                </div>
+
+                {/* Left / Right Nav Arrows */}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActivePreviewIdx(prev => (prev > 0 ? prev - 1 : images.length - 1))}
+                      style={{
+                        position: 'absolute',
+                        left: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                      title="Previous screenshot"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActivePreviewIdx(prev => (prev < images.length - 1 ? prev + 1 : 0))}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'rgba(0,0,0,0.6)',
+                        border: 'none',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                      title="Next screenshot"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </>
+                )}
+
+                {/* Remove current button if more than 1 */}
+                {images.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(images[activePreviewIdx], activePreviewIdx)}
+                    style={{
+                      position: 'absolute',
+                      bottom: '10px',
+                      right: '10px',
+                      background: 'rgba(239,68,68,0.92)',
+                      border: 'none',
+                      color: '#fff',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer'
+                    }}
+                    title="Remove this screenshot"
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete Screenshot</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Thumbnails Row */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {images.map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActivePreviewIdx(i)}
+                    style={{
+                      position: 'relative',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      border: i === activePreviewIdx ? '2px solid #3b82f6' : '1px solid var(--border-color)',
+                      width: '85px',
+                      height: '60px',
+                      cursor: 'pointer',
+                      opacity: i === activePreviewIdx ? 1 : 0.65,
+                      transition: 'all 0.15s ease',
+                      background: '#090d16'
+                    }}
+                  >
+                    <img
+                      src={img}
+                      alt={`Screenshot ${i + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    {i === 0 && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          background: '#2563eb',
+                          color: '#fff',
+                          fontSize: '8px',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          lineHeight: '12px'
+                        }}
+                      >
+                        COVER
+                      </span>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  style={{
+                    width: '85px',
+                    height: '60px',
+                    borderRadius: '6px',
+                    border: '1px dashed var(--border-color)',
+                    background: 'var(--surface-color)',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    gap: '2px'
+                  }}
+                  title="Add more screenshots"
+                >
+                  <Upload size={14} />
+                  <span>+ Add</span>
                 </button>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No screenshots available.
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
@@ -368,8 +581,8 @@ export const SFSEditBlueprintPage: React.FC = () => {
         </div>
       </form>
 
-      {/* Upload Image Modal matching change_interface */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Upload Craft Screenshot">
+      {/* Upload Image Modal with Multi-File Support */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Upload Craft Screenshots">
         <div style={{ textAlign: 'center', padding: '1rem 0' }}>
           <label
             style={{
@@ -380,23 +593,29 @@ export const SFSEditBlueprintPage: React.FC = () => {
               border: '2px dashed var(--border-color)',
               borderRadius: '10px',
               padding: '2.5rem',
-              cursor: 'pointer'
+              cursor: uploadingImg ? 'wait' : 'pointer',
+              background: 'var(--bg-color)'
             }}
           >
-            <Upload size={36} color="var(--primary)" />
-            <span style={{ marginTop: '0.75rem', fontWeight: 600 }}>Click to browse image files</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP up to 5MB</span>
+            {uploadingImg ? (
+              <>
+                <Loader2 size={36} className="animate-spin" color="var(--primary)" />
+                <span style={{ marginTop: '0.75rem', fontWeight: 600 }}>Uploading screenshots to CDN...</span>
+              </>
+            ) : (
+              <>
+                <Upload size={36} color="var(--primary)" />
+                <span style={{ marginTop: '0.75rem', fontWeight: 600 }}>Click to browse one or multiple image files</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Supports PNG, JPG, WEBP (multiple selection enabled)</span>
+              </>
+            )}
             <input
               type="file"
               accept="image/*"
+              multiple
+              disabled={uploadingImg}
               style={{ display: 'none' }}
-              onChange={e => {
-                if (e.target.files && e.target.files[0]) {
-                  const url = URL.createObjectURL(e.target.files[0]);
-                  setImages(prev => [...prev, url]);
-                  setIsModalOpen(false);
-                }
-              }}
+              onChange={e => handleUploadAdditionalImages(e.target.files)}
             />
           </label>
         </div>

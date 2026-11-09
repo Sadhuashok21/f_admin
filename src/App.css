@@ -951,3 +951,317 @@ body.dark .dropdown-item:hover {
     width: 100%;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BLOGGER-STYLE FULL BLANK SCREEN EDITOR & DYNAMIC NORMAL/CODE STUDIO
+   ══════════════════════════════════════════════════════════════════════════ */
+.blogger-editor-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  width: 100%;
+  background: var(--bg-main, #040711);
+  overflow: hidden;
+  position: relative;
+}
+
+.blogger-top-header {
+  height: 56px;
+  background: #090e1a;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  gap: 1rem;
+  flex-shrink: 0;
+  z-index: 30;
+}
+
+.blogger-title-input {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f8fafc;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  padding: 4px 8px;
+  transition: border-color 0.15s ease;
+  width: 100%;
+  max-width: 450px;
+}
+
+.blogger-title-input:focus {
+  border-bottom-color: #38bdf8;
+}
+
+.blogger-title-input::placeholder {
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Normal / Code Mode Segmented Pill */
+.blogger-mode-pill {
+  display: flex;
+  background: #030712;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  gap: 2px;
+}
+
+.blogger-mode-pill button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+}
+
+.blogger-mode-pill button.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.blogger-mode-pill button:hover:not(.active) {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Blogger Workspace */
+.blogger-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.blogger-canvas-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #040711;
+}
+
+.blogger-canvas-sheet {
+  width: 100%;
+  max-width: 1240px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 150px);
+}
+
+/* CKEditor Canvas Wrapper */
+.blogger-ckeditor-canvas {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.blogger-ckeditor-canvas .ck.ck-editor {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  border: none !important;
+  width: 100% !important;
+}
+
+/* Custom CKEditor Toolbar Matching media_1794153062835_1fc2fdf8.png */
+.blogger-ckeditor-canvas .ck.ck-toolbar {
+  background: #0b1120 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 10px 10px 0 0 !important;
+  padding: 6px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  gap: 2px !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-toolbar .ck-toolbar__separator {
+  background: #334155 !important;
+  height: 20px !important;
+  margin: 0 6px !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-button {
+  color: #94a3b8 !important;
+  border-radius: 6px !important;
+  padding: 4px 6px !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-button:hover:not(.ck-disabled) {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-button.ck-on {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-dropdown .ck-dropdown__button {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 6px !important;
+  padding: 3px 10px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-dropdown .ck-dropdown__button:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-dropdown .ck-dropdown__panel {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-list__item .ck-button {
+  color: #cbd5e1 !important;
+  padding: 6px 12px !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-list__item .ck-button:hover {
+  background: #1e293b !important;
+  color: #38bdf8 !important;
+}
+
+/* Full Blank Screen Content Canvas */
+.blogger-ckeditor-canvas .ck.ck-editor__main {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Dark Mode Canvas */
+.blogger-ckeditor-canvas.canvas-dark .ck.ck-content {
+  flex: 1 !important;
+  min-height: calc(100vh - 220px) !important;
+  background: #090e1a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
+  border-top: none !important;
+  border-radius: 0 0 10px 10px !important;
+  padding: 36px 44px !important;
+  font-size: 16px !important;
+  line-height: 1.75 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+  outline: none !important;
+}
+
+/* Light / Classic Document Canvas */
+.blogger-ckeditor-canvas.canvas-light .ck.ck-content {
+  flex: 1 !important;
+  min-height: calc(100vh - 220px) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  border-top: none !important;
+  border-radius: 0 0 10px 10px !important;
+  padding: 36px 44px !important;
+  font-size: 16px !important;
+  line-height: 1.75 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  outline: none !important;
+}
+
+/* Source Editing within CKEditor */
+.blogger-ckeditor-canvas .ck.ck-source-editing-area {
+  flex: 1 !important;
+  min-height: calc(100vh - 220px) !important;
+}
+
+.blogger-ckeditor-canvas .ck.ck-source-editing-area textarea {
+  min-height: calc(100vh - 220px) !important;
+  background: #030712 !important;
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  padding: 24px 32px !important;
+  border: 1px solid #1e293b !important;
+  border-top: none !important;
+  border-radius: 0 0 10px 10px !important;
+  outline: none !important;
+}
+
+/* Blogger Raw HTML Code Mode Workspace */
+.blogger-code-workspace {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: #090e1a;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.blogger-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #0b1120;
+  border-bottom: 1px solid #1e293b;
+  font-size: 13px;
+}
+
+.blogger-code-editor-textarea {
+  flex: 1;
+  min-height: calc(100vh - 220px);
+  width: 100%;
+  background: #040711;
+  color: #e0f2fe;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 24px 32px;
+  border: none;
+  outline: none;
+  resize: vertical;
+}
+
+/* Slide-Over Settings Drawer */
+.blogger-slide-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  background: #090e1a;
+  border-left: 1px solid #1e293b;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.blogger-slide-drawer.drawer-closed {
+  transform: translateX(100%);
+  pointer-events: none;
+}
+

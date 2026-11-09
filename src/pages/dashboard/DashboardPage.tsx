@@ -8,7 +8,8 @@ import {
   ArrowRight,
   Server,
   RefreshCw,
-  Bug
+  Bug,
+  MessageSquare
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { User } from '../../types';
@@ -40,7 +41,9 @@ export const DashboardPage: React.FC = () => {
     total_downloads: 6,
     total_likes: 2,
     total_activities: 1851,
-    total_errors: 260
+    total_errors: 260,
+    total_inquiries: 0,
+    pending_inquiries: 0
   });
 
   const [startDate, setStartDate] = useState(() => {
@@ -66,7 +69,7 @@ export const DashboardPage: React.FC = () => {
       ]);
 
       if (connected && statsRes?.status && statsRes.stats) {
-        setStats(statsRes.stats);
+        setStats(prev => ({ ...prev, ...statsRes.stats }));
       }
       setIsLive(Boolean(connected && statsRes?.status));
 
@@ -133,6 +136,10 @@ export const DashboardPage: React.FC = () => {
           <Link to="/skiltrix/internships" className="btn btn-secondary btn-sm">
             <span>View Internships</span>
           </Link>
+          <Link to="/contacts" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <MessageSquare size={15} color="#3b82f6" />
+            <span>Inquiries {stats.total_inquiries ? `(${stats.total_inquiries})` : ''}</span>
+          </Link>
         </div>
       </div>
 
@@ -161,6 +168,12 @@ export const DashboardPage: React.FC = () => {
           value={stats.total_errors}
           comparisonText="All-time recorded errors"
           icon={<Bug size={20} color="var(--danger)" />}
+        />
+        <StatCard
+          title="Contact Inquiries"
+          value={stats.total_inquiries || 0}
+          comparisonText={`${(stats.pending_inquiries || 0).toLocaleString()} pending review`}
+          icon={<MessageSquare size={20} color="#3b82f6" />}
         />
       </div>
 

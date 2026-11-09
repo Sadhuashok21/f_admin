@@ -37,6 +37,13 @@ import { SkiltrixCompilerPricingPage } from './pages/skiltrix/SkiltrixCompilerPr
 import { SkiltrixMocksPage } from './pages/skiltrix/SkiltrixMocksPage';
 import { SkiltrixCompanyBlueprintsPage } from './pages/skiltrix/SkiltrixCompanyBlueprintsPage';
 
+// SkilTrix CMS Course Builder Pages
+import { CmsCoursesListPage } from './pages/skiltrix/cms/CmsCoursesListPage';
+import { CmsPagesListPage } from './pages/skiltrix/cms/CmsPagesListPage';
+import { CmsPageBuilderPage } from './pages/skiltrix/cms/CmsPageBuilderPage';
+import { CmsMediaLibraryPage } from './pages/skiltrix/cms/CmsMediaLibraryPage';
+import { CmsNavigationManagerPage } from './pages/skiltrix/cms/CmsNavigationManagerPage';
+
 // SonicOra Pages
 import { SonicoraOverviewPage } from './pages/sonicora/SonicoraOverviewPage';
 import { SonicoraMovieUploadPage } from './pages/sonicora/SonicoraMovieUploadPage';
@@ -55,6 +62,8 @@ import { LogsPage } from './pages/logs/LogsPage';
 
 // Users Module
 import { UsersPage } from './pages/users/UsersPage';
+import { ContactRequestsPage } from './pages/contacts/ContactRequestsPage';
+import { AccountsManagementPage } from './pages/accounts/AccountsManagementPage';
 
 // User Profile Module
 import { UserProfilePage } from './pages/user_profile/UserProfilePage';
@@ -111,6 +120,17 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/companyblueprints" element={<SkiltrixCompanyBlueprintsPage />} />
               <Route path="/skiltrix/blueprints" element={<SkiltrixCompanyBlueprintsPage />} />
 
+              {/* SkilTrix CMS Course Builder Routes */}
+              <Route path="/skiltrix/cms" element={<CmsCoursesListPage />} />
+              <Route path="/skiltrix/cms/courses" element={<CmsCoursesListPage />} />
+              <Route path="/skiltrix/cms/pages" element={<CmsPagesListPage />} />
+              <Route path="/skiltrix/cms/pages/create" element={<CmsPageBuilderPage />} />
+              <Route path="/skiltrix/cms/pages/:pageId" element={<CmsPageBuilderPage />} />
+              <Route path="/skiltrix/cms/media" element={<CmsMediaLibraryPage />} />
+              <Route path="/skiltrix/cms/navigation" element={<CmsNavigationManagerPage />} />
+              <Route path="/skiltrix/cms/drafts" element={<CmsPagesListPage initialStatusFilter="draft" pageTitle="Draft Course Pages" />} />
+              <Route path="/skiltrix/cms/published" element={<CmsPagesListPage initialStatusFilter="published" pageTitle="Published Course Pages" />} />
+
               {/* SonicOra Module Routes */}
               <Route path="/sonicora" element={<SonicoraOverviewPage />} />
               <Route path="/sonicora/movie_upload" element={<SonicoraMovieUploadPage />} />
@@ -131,6 +151,14 @@ export const App: React.FC = () => {
 
               {/* Users Directory Routes */}
               <Route path="/users" element={<UsersPage />} />
+
+              {/* Accounts & Admin Privileges Module */}
+              <Route path="/accounts" element={<AccountsManagementPage />} />
+              <Route path="/accounts/admins" element={<AccountsManagementPage />} />
+
+              {/* Contact Requests & Inquiries Routes */}
+              <Route path="/contacts" element={<ContactRequestsPage />} />
+              <Route path="/inquiries" element={<ContactRequestsPage />} />
 
               {/* User Profile & Audit Trail Routes */}
               <Route path="/profile" element={<UserProfilePage />} />

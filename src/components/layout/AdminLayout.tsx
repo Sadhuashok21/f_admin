@@ -33,12 +33,18 @@ export const AdminLayout: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Automatically close sidebar on mobile when route changes
+  const isFullCanvasRoute =
+    location.pathname.startsWith('/skiltrix/cms/pages/create') ||
+    (location.pathname.startsWith('/skiltrix/cms/pages/') &&
+      !location.pathname.endsWith('/pages') &&
+      !location.pathname.endsWith('/pages/'));
+
+  // Automatically close sidebar on mobile or when entering full-screen canvas editor
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile || isFullCanvasRoute) {
       setSidebarCollapsed(true);
     }
-  }, [location.pathname, isMobile]);
+  }, [location.pathname, isMobile, isFullCanvasRoute]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => !prev);
@@ -69,7 +75,10 @@ export const AdminLayout: React.FC = () => {
         />
       )}
       <main className={`main-wrapper ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <div className="content-container">
+        <div
+          className="content-container"
+          style={isFullCanvasRoute ? { padding: 0, maxWidth: '100%', margin: 0, width: '100%' } : undefined}
+        >
           <Outlet />
         </div>
       </main>
