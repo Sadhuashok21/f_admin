@@ -25,8 +25,9 @@ export const SFSUploadBlueprintPage: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [link, setLink] = useState('');
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [zipFile, setZipFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -73,15 +74,32 @@ export const SFSUploadBlueprintPage: React.FC = () => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        setErrorMessage('Please select a valid image file (PNG, JPG, WEBP, etc.)');
-        return;
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles: File[] = [];
+      const newPreviews: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) {
+          setErrorMessage('Please select valid image files (PNG, JPG, WEBP, etc.)');
+          return;
+        }
+        newFiles.push(file);
+        newPreviews.push(URL.createObjectURL(file));
       }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+
+      setImageFiles(prev => [...prev, ...newFiles]);
+      setImagePreviews(prev => [...prev, ...newPreviews]);
       setErrorMessage(null);
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImageFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    if (activePreviewIndex >= indexToRemove && activePreviewIndex > 0) {
+      setActivePreviewIndex(activePreviewIndex - 1);
     }
   };
 
@@ -118,8 +136,8 @@ export const SFSUploadBlueprintPage: React.FC = () => {
       return;
     }
 
-    if (!imageFile) {
-      setErrorMessage('Please upload a screenshot or preview image.');
+    if (imageFiles.length === 0) {
+      setErrorMessage('Please upload at least one screenshot or preview image.');
       return;
     }
 
@@ -142,7 +160,12 @@ export const SFSUploadBlueprintPage: React.FC = () => {
         });
       }
 
-      formData.append('image', imageFile);
+      // Primary cover screenshot
+      formData.append('image', imageFiles[0]);
+      // All preview gallery screenshots
+      imageFiles.forEach(file => {
+        formData.append('images', file);
+      });
       formData.append('zip_file', zipFile);
       if (link.trim()) {
         formData.append('sfs_link', link.trim());
@@ -347,58 +370,160 @@ export const SFSUploadBlueprintPage: React.FC = () => {
           </div>
           )}
 
-          {/* Screenshots / Preview Image */}
+          {/* Screenshots / Preview Images (Multi-Image Support) */}
           <div className="form-group">
-            <label className="form-label" htmlFor="images">
-              {type === 'mod' ? 'Mod Cover / Screenshot' : 'Craft / Planet Screenshots'}{' '}
-              <span className="star">*</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label className="form-label" htmlFor="images" style={{ margin: 0 }}>
+                {type === 'mod' ? 'Mod Cover & Screenshots' : 'Craft / Planet Screenshots'} <span className="star">*</span>
+              </label>
+              <span style={{ fontSize: '0.78rem', color: imageFiles.length > 0 ? '#3b82f6' : 'var(--text-muted)', fontWeight: 600 }}>
+                {imageFiles.length > 0
+                  ? `${imageFiles.length} screenshot${imageFiles.length > 1 ? 's' : ''} selected (1st is cover)`
+                  : 'Upload one or multiple images'}
+              </span>
+            </div>
+
             <input
               ref={imgInputRef}
               type="file"
               id="images"
               className="form-input"
               accept="image/*"
+              multiple
               onChange={handleImageChange}
-              required
+              style={{ display: imagePreviews.length > 0 ? 'none' : 'block' }}
+              required={imageFiles.length === 0}
             />
-            {imagePreview && (
-              <div style={{ marginTop: '10px', position: 'relative', width: 'fit-content' }}>
-                <img
-                  src={imagePreview}
-                  alt="Upload Preview"
-                  style={{ maxHeight: '140px', borderRadius: '8px', border: '1px solid var(--border-color)', objectFit: 'cover' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
-                    if (imgInputRef.current) imgInputRef.current.value = '';
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    background: 'var(--danger)',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    width: '20px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                  title="Remove image"
-                >
-                  <X size={12} />
-                </button>
+
+            {imagePreviews.length > 0 && (
+              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Active Main Preview Image */}
+                <div style={{ position: 'relative', width: '100%', maxWidth: '460px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color)', background: '#090d16' }}>
+                  <img
+                    src={imagePreviews[activePreviewIndex] || imagePreviews[0]}
+                    alt="Active Preview"
+                    style={{ width: '100%', height: '230px', objectFit: 'contain', display: 'block' }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '8px',
+                      background: activePreviewIndex === 0 ? 'rgba(37,99,235,0.92)' : 'rgba(0,0,0,0.75)',
+                      color: '#fff',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      letterSpacing: '0.3px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    {activePreviewIndex === 0 ? '★ Primary Cover' : `Screenshot #${activePreviewIndex + 1}`}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(activePreviewIndex)}
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      background: 'rgba(239,68,68,0.92)',
+                      color: '#fff',
+                      borderRadius: '6px',
+                      padding: '4px 8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                    title="Remove this image"
+                  >
+                    <X size={13} />
+                    <span>Delete</span>
+                  </button>
+                </div>
+
+                {/* Thumbnails Strip */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {imagePreviews.map((previewUrl, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setActivePreviewIndex(idx)}
+                      style={{
+                        position: 'relative',
+                        width: '74px',
+                        height: '54px',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: idx === activePreviewIndex ? '2px solid #3b82f6' : '1px solid var(--border-color)',
+                        opacity: idx === activePreviewIndex ? 1 : 0.7,
+                        transition: 'all 0.15s ease',
+                        background: '#090d16'
+                      }}
+                      title={idx === 0 ? 'Primary Cover Thumbnail' : `Screenshot #${idx + 1}`}
+                    >
+                      <img
+                        src={previewUrl}
+                        alt={`Thumb ${idx + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      {idx === 0 && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: '#2563eb',
+                            color: '#fff',
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            textAlign: 'center',
+                            lineHeight: '13px'
+                          }}
+                        >
+                          COVER
+                        </span>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add More Screenshots Button */}
+                  <button
+                    type="button"
+                    onClick={() => imgInputRef.current?.click()}
+                    style={{
+                      width: '74px',
+                      height: '54px',
+                      borderRadius: '6px',
+                      border: '1px dashed var(--border-color)',
+                      background: 'var(--surface-color)',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      gap: '2px'
+                    }}
+                    title="Upload more screenshots"
+                  >
+                    <Upload size={14} />
+                    <span>+ Add</span>
+                  </button>
+                </div>
               </div>
             )}
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-              Select high resolution screenshots (PNG, JPG, WEBP)
+
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+              Select high resolution screenshots (PNG, JPG, WEBP). First screenshot will be used as the catalog cover.
             </span>
           </div>
 

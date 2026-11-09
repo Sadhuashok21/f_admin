@@ -13,7 +13,9 @@ import {
   CompanyMockItem,
   CompanyBlueprintItem,
   QuestionItem,
-  AssessmentSectionItem
+  AssessmentSectionItem,
+  ContactSubmission,
+  ContactMetrics
 } from '../types';
 import {
   initialUsers,
@@ -183,7 +185,9 @@ export const api = {
           total_likes: 2,
           total_shares: 0,
           total_activities: 1851,
-          total_errors: 260
+          total_errors: 260,
+          total_inquiries: 0,
+          pending_inquiries: 0
         },
         recent_activities: []
       }
@@ -327,13 +331,36 @@ export const api = {
   },
 
   async uploadBlueprint(formData: FormData) {
-    return fetchWithFallback<{ status: boolean; message?: string; bp_id?: string; image_url?: string; zip_url?: string }>(
+    return fetchWithFallback<{ status: boolean; message?: string; bp_id?: string; image_url?: string; images?: string[]; zip_url?: string }>(
       '/apps/sfs/upload/',
       {
         method: 'POST',
         body: formData
       },
       { status: true, message: 'Blueprint uploaded' }
+    );
+  },
+
+  async uploadBlueprintImages(bpId: string, files: File[]) {
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    return fetchWithFallback<{ status: boolean; images: string[]; uploaded: string[] }>(
+      `/api/admin/blueprints/${bpId}/images/`,
+      {
+        method: 'POST',
+        body: formData,
+      },
+      { status: false, images: [], uploaded: [] }
+    );
+  },
+
+  async deleteBlueprintImage(bpId: string, imageUrl: string) {
+    return fetchWithFallback<{ status: boolean; message?: string }>(
+      `/api/admin/blueprints/${bpId}/images/?image=${encodeURIComponent(imageUrl)}`,
+      {
+        method: 'DELETE',
+      },
+      { status: false }
     );
   },
 
@@ -1198,5 +1225,65 @@ export const api = {
       []
     );
     return Array.isArray(res) ? res : (res?.results || []);
+  },
+
+  async getContactSubmissions(params?: {
+    status?: string;
+    source?: string;
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<{ submissions: ContactSubmission[]; total: number; metrics: ContactMetrics }> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'all') query.set('status', params.status);
+    if (params?.source && params.source !== 'all') query.set('source', params.source);
+    if (params?.search) query.set('search', params.search);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.page_size) query.set('page_size', String(params.page_size));
+
+    const res = await fetchWithFallback<any>(
+      `/api/admin/contacts/?${query.toString()}`,
+      { method: 'GET' },
+      {
+        submissions: [],
+        total: 0,
+        metrics: { total: 0, pending: 0, contacted: 0, in_progress: 0, completed: 0 }
+      }
+    );
+    return {
+      submissions: res?.submissions || [],
+      total: res?.total || 0,
+      metrics: res?.metrics || { total: 0, pending: 0, contacted: 0, in_progress: 0, completed: 0 }
+    };
+  },
+
+  async getContactSubmission(id: number | string): Promise<ContactSubmission | null> {
+    const res = await fetchWithFallback<any>(
+      `/api/admin/contacts/${id}/`,
+      { method: 'GET' },
+      null
+    );
+    return res?.submission || null;
+  },
+
+  async updateContactSubmission(id: number | string, data: { status?: string; notes?: string }): Promise<boolean> {
+    const res = await fetchWithFallback<any>(
+      `/api/admin/contacts/${id}/`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data)
+      },
+      { status: false }
+    );
+    return res?.status === true;
+  },
+
+  async deleteContactSubmission(id: number | string): Promise<boolean> {
+    const res = await fetchWithFallback<any>(
+      `/api/admin/contacts/${id}/`,
+      { method: 'DELETE' },
+      { status: false }
+    );
+    return res?.status === true;
   }
 };

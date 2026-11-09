@@ -29,7 +29,14 @@ import {
   FileCheck,
   BadgeIndianRupee,
   Layers,
-  Award
+  Award,
+  FileText,
+  FilePlus,
+  Image as ImageIcon,
+  Clock,
+  CheckCircle2,
+  PenTool,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -46,8 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
   const pathname = location.pathname;
 
   // Determine which sub-menu we are in, if any
+  const isCms = pathname.startsWith('/skiltrix/cms');
   const isSFS = pathname.startsWith('/sfs');
-  const isSkiltrix = pathname.startsWith('/skiltrix');
+  const isSkiltrix = pathname.startsWith('/skiltrix') && !isCms;
   const isLogs = pathname.startsWith('/logs');
 
   const handleItemClick = () => {
@@ -60,6 +68,80 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
     logout();
     navigate('/access-restricted');
   };
+
+  // Render CMS Content Management specific sidebar
+  if (isCms) {
+    return (
+      <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+        <div
+          className="sidebar-header"
+          onClick={() => navigate('/skiltrix')}
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#93c5fd' }}
+        >
+          <ArrowLeft size={16} />
+          <h2 style={{ color: '#93c5fd', margin: 0 }}>Back to SkilTrix</h2>
+        </div>
+
+        <div style={{ padding: '0.5rem 1rem 0.25rem', fontSize: '1.05rem', fontWeight: 700, color: '#f8fafc' }}>
+          Content Management
+        </div>
+
+        <ul className="sidebar-menu">
+          <li>
+            <NavLink to="/skiltrix/cms/courses" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <BookOpen size={18} />
+              <span className="sidebar_icons_name">All Courses</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/pages" end className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <FileText size={18} />
+              <span className="sidebar_icons_name">All Pages</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/pages/create" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <FilePlus size={18} />
+              <span className="sidebar_icons_name">Create New Page</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/media" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <ImageIcon size={18} />
+              <span className="sidebar_icons_name">Media Library</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/navigation" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <FolderTree size={18} />
+              <span className="sidebar_icons_name">Navigation Manager</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/drafts" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <Clock size={18} />
+              <span className="sidebar_icons_name">Draft Pages</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/published" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <CheckCircle2 size={18} />
+              <span className="sidebar_icons_name">Published Pages</span>
+            </NavLink>
+          </li>
+        </ul>
+
+        {isAuthenticated && (
+          <div className="sidebar-footer">
+            <button className="sidebar_item" onClick={handleLogout} style={{ width: '100%', background: 'transparent', border: 'none' }}>
+              <LogOut size={18} color="var(--danger)" />
+              <span className="sidebar_icons_name" style={{ color: 'var(--danger)' }}>Log out</span>
+            </button>
+          </div>
+        )}
+      </aside>
+    );
+  }
 
   // Render SFS specific sidebar if inside SFS routes
   if (isSFS) {
@@ -163,6 +245,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             <NavLink to="/skiltrix" end className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <GraduationCap size={18} />
               <span className="sidebar_icons_name">Home</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/skiltrix/cms/courses" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <PenTool size={18} color="#818cf8" />
+              <span className="sidebar_icons_name" style={{ color: '#818cf8', fontWeight: 600 }}>CMS Course Builder</span>
             </NavLink>
           </li>
           <li>
@@ -363,6 +451,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
         </li>
 
         <li>
+          <NavLink to="/skiltrix/cms/courses" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+            <PenTool size={18} />
+            <span className="sidebar_icons_name">CMS Page Builder</span>
+          </NavLink>
+        </li>
+
+        <li>
           <NavLink to="/krishi" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
             <Hammer size={18} />
             <span className="sidebar_icons_name">Krishi</span>
@@ -387,6 +482,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
           <NavLink to="/users" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
             <Users size={18} />
             <span className="sidebar_icons_name">Users</span>
+          </NavLink>
+        </li>
+
+        <li>
+          <NavLink to="/accounts" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+            <ShieldCheck size={18} />
+            <span className="sidebar_icons_name">Admin Accounts</span>
+          </NavLink>
+        </li>
+
+        <li>
+          <NavLink to="/contacts" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+            <MessageSquare size={18} />
+            <span className="sidebar_icons_name">Inquiries</span>
           </NavLink>
         </li>
 
