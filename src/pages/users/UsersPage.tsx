@@ -17,7 +17,7 @@ import {
   Upload,
   Download
 } from 'lucide-react';
-import { initialUsers } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { User } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
@@ -25,11 +25,11 @@ import { api } from '../../services/api';
 import { getStImageUrl } from '../../utils/cdn';
 
 export const UsersPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending' | 'disapproved'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
   const itemsPerPage = 6;
 
@@ -296,7 +296,13 @@ export const UsersPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentUsers.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem' }}>
+                    <LoadingSpinner message="Retrieving users from database..." />
+                  </td>
+                </tr>
+              ) : currentUsers.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     No users found matching your search.

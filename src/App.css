@@ -1,3 +1,18 @@
+/* Progress & Spinner Animations */
+@keyframes admin-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-spin {
+  animation: admin-spin 0.85s linear infinite;
+  transform-origin: center;
+}
+
 /* Main Layout Structure */
 .app-container {
   display: flex;
@@ -695,14 +710,6 @@ body.dark .dropdown-item:hover {
   flex-shrink: 0;
 }
 
-/* Skiltrix Editor Split Grid */
-.skiltrix-editor-grid {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 1.25rem;
-  align-items: start;
-}
-
 /* Responsive Date Filter Group */
 .date-filter-group {
   display: flex;
@@ -715,9 +722,6 @@ body.dark .dropdown-item:hover {
    TABLET & MOBILE BREAKPOINTS (@media max-width: 1024px)
    ========================================================================== */
 @media (max-width: 1024px) {
-  .skiltrix-editor-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ==========================================================================

@@ -1,6 +1,4 @@
-/**
- * API client for Admin Accounts & Privileges Management
- */
+
 
 import {
   AdminAccountsResponse,

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Eye, Download, Heart, Share2, Plus, Edit2, Trash2, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { api } from '../../services/api';
-import { initialBlueprints, initialCategories } from '../../data/mockData';
 import { Blueprint, BlueprintCategory } from '../../types';
 import { getSfsImageUrl } from '../../utils/cdn';
 
@@ -40,11 +39,11 @@ export const SFSOverviewPage: React.FC = () => {
         });
       }
 
-      setBlueprints(bpList && bpList.length > 0 ? bpList : initialBlueprints);
-      setCategories(catList && catList.length > 0 ? catList : initialCategories);
+      setBlueprints(bpList || []);
+      setCategories(catList || []);
     } catch {
-      setBlueprints(initialBlueprints);
-      setCategories(initialCategories);
+      setBlueprints([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }

@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Film, User, Disc, Plus, Trash2, Play } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
-import { initialMovies, initialSongs } from '../../data/mockData';
 import { Movie, Song } from '../../types';
 
 export const SonicoraOverviewPage: React.FC = () => {
-  const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [songs, setSongs] = useState<Song[]>(initialSongs);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
 
   const handleDeleteMovie = (id: string) => {
     if (window.confirm('Delete this movie from SonicOra?')) {
@@ -95,7 +94,14 @@ export const SonicoraOverviewPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {movies.map(movie => (
+              {movies.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    No movies found in database.
+                  </td>
+                </tr>
+              ) : (
+                movies.map(movie => (
                 <tr key={movie.movie_id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -119,7 +125,7 @@ export const SonicoraOverviewPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
@@ -148,7 +154,14 @@ export const SonicoraOverviewPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {songs.map(song => (
+              {songs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    No tracks found in database.
+                  </td>
+                </tr>
+              ) : (
+                songs.map(song => (
                 <tr key={song.song_id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -172,7 +185,7 @@ export const SonicoraOverviewPage: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

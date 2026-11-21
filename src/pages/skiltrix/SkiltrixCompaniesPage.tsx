@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Building2, Upload, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialCompanies } from '../../data/mockData';
 import { Company } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -21,9 +20,9 @@ export const SkiltrixCompaniesPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getCompanies();
-      setCompanies(data && data.length > 0 ? data : initialCompanies);
+      setCompanies(data || []);
     } catch {
-      setCompanies(initialCompanies);
+      setCompanies([]);
     } finally {
       setLoading(false);
     }
@@ -122,7 +121,14 @@ export const SkiltrixCompaniesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {companies.map(comp => (
+                {companies.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                      No companies found in database.
+                    </td>
+                  </tr>
+                ) : (
+                  companies.map(comp => (
                   <tr key={comp.company_id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -165,7 +171,7 @@ export const SkiltrixCompaniesPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           )}

@@ -12,10 +12,10 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
-import { initialVideos, initialCourses } from '../../data/mockData';
 import { Video, Course, VideoComment } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api';
+import { validateAdminUploadSize, formatFileSize } from '../../utils/uploadLimit';
 
 export const SkiltrixVideosPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -52,15 +52,15 @@ export const SkiltrixVideosPage: React.FC = () => {
         api.getVideos(),
         api.getCourses()
       ]);
-      setVideos(vids && vids.length > 0 ? vids : initialVideos);
-      const courseList = crss && crss.length > 0 ? crss : initialCourses;
+      setVideos(vids || []);
+      const courseList = crss || [];
       setCourses(courseList);
       if (courseList.length > 0 && !courseId) {
         setCourseId(courseList[0].course_id);
       }
     } catch {
-      setVideos(initialVideos);
-      setCourses(initialCourses);
+      setVideos([]);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -84,6 +84,14 @@ export const SkiltrixVideosPage: React.FC = () => {
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const check = validateAdminUploadSize(file);
+      if (!check.valid) {
+        setFormError(check.error || 'Video file exceeds the 1 GB admin upload limit.');
+        e.target.value = '';
+        setVideoFile(null);
+        return;
+      }
+      setFormError('');
       setVideoFile(file);
       if (!title) {
         // Auto-suggest title from filename without extension
@@ -269,7 +277,16 @@ export const SkiltrixVideosPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {videos.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                      <RefreshCw size={20} className="animate-spin" />
+                      <span>Retrieving video lectures from database...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : videos.length === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
                     <VideoIcon size={36} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
@@ -449,9 +466,12 @@ export const SkiltrixVideosPage: React.FC = () => {
             {videoFile && (
               <p style={{ fontSize: '0.78rem', color: '#16a34a', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <CheckCircle size={13} />
-                <span>Selected: {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                <span>Selected: {videoFile.name} ({formatFileSize(videoFile.size)})</span>
               </p>
             )}
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted, #94a3b8)', marginTop: '2px', display: 'block' }}>
+              Admin Panel Upload Limit: up to 1 GB per video file
+            </span>
           </div>
 
           <div className="form-group">

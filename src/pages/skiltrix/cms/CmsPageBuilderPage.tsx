@@ -200,27 +200,33 @@ export const CmsPageBuilderPage: React.FC = () => {
   // Handle Switch to Normal (Code -> Normal)
   const handleSwitchToNormal = () => {
     setEditorMode('normal');
-    // Ensure CKEditor updates with the raw HTML edited in Code view
-    setTimeout(() => {
-      if (editorRef.current) {
-        editorRef.current.setData(contentHtml);
-      }
-    }, 50);
+    if (editorRef.current) {
+      editorRef.current.setData(contentHtml);
+    }
   };
 
   // Insert HTML at Cursor / Append
   const insertHtmlSnippet = (html: string) => {
     if (editorMode === 'normal') {
       if (editorRef.current) {
-        const viewFragment = editorRef.current.data.processor.toView(html);
-        const modelFragment = editorRef.current.data.toModel(viewFragment);
-        editorRef.current.model.insertContent(modelFragment);
-        setContentHtml(editorRef.current.getData());
+        try {
+          editorRef.current.model.change(() => {
+            const viewFragment = editorRef.current.data.processor.toView(html);
+            const modelFragment = editorRef.current.data.toModel(viewFragment);
+            editorRef.current.model.insertContent(modelFragment);
+          });
+          setContentHtml(editorRef.current.getData());
+        } catch {
+          const currentData = editorRef.current.getData();
+          const updated = currentData ? `${currentData}\n${html}` : html;
+          editorRef.current.setData(updated);
+          setContentHtml(updated);
+        }
       } else {
-        setContentHtml((prev) => `${prev}\n${html}`);
+        setContentHtml((prev) => (prev ? `${prev}\n${html}` : html));
       }
     } else {
-      setContentHtml((prev) => `${prev}\n\n${html}`);
+      setContentHtml((prev) => (prev ? `${prev}\n\n${html}` : html));
     }
     setIsBlockMenuOpen(false);
   };
@@ -537,6 +543,52 @@ export const CmsPageBuilderPage: React.FC = () => {
             <span style={{ fontSize: '11px', fontWeight: 600 }}>{canvasTheme === 'dark' ? 'Dark' : 'Light'}</span>
           </button>
 
+          {/* Quick Insert Video Button (Custom Place & Custom Number of Videos) */}
+          <button
+            type="button"
+            onClick={() => setYoutubeModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.12)',
+              color: '#f87171',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '12px'
+            }}
+            title="Insert YouTube Video Card or Embedded Player at current cursor position"
+          >
+            <Video size={14} color="#ef4444" />
+            <span>+ Video</span>
+          </button>
+
+          {/* Quick Insert Code Block Button */}
+          <button
+            type="button"
+            onClick={() => setCodeModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              background: 'rgba(56, 189, 248, 0.12)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '12px'
+            }}
+            title="Insert Syntax Highlighted Code Block at current cursor position"
+          >
+            <Code2 size={14} color="#38bdf8" />
+            <span>+ Code</span>
+          </button>
+
           {/* Educational Block Inserter Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
@@ -557,7 +609,7 @@ export const CmsPageBuilderPage: React.FC = () => {
               }}
             >
               <Sparkles size={14} />
-              <span>+ Insert Component</span>
+              <span>+ Components</span>
               <ChevronDown size={13} />
             </button>
 
@@ -798,8 +850,15 @@ export const CmsPageBuilderPage: React.FC = () => {
         {/* Canvas Area: Full Screen Sheet */}
         <div className="blogger-canvas-area">
           <div className="blogger-canvas-sheet">
-            {editorMode === 'normal' ? (
-              /* ── Normal / Visual Mode: CKEditor 5 Full Canvas ─────────────────── */
+            {/* ── Normal / Visual Mode: CKEditor 5 Full Canvas ─────────────────── */}
+            <div
+              style={{
+                display: editorMode === 'normal' ? 'flex' : 'none',
+                width: '100%',
+                flex: 1,
+                flexDirection: 'column'
+              }}
+            >
               <CKEditorWrapper
                 value={contentHtml}
                 onChange={(data) => setContentHtml(data)}
@@ -808,8 +867,17 @@ export const CmsPageBuilderPage: React.FC = () => {
                 }}
                 canvasTheme={canvasTheme}
               />
-            ) : (
-              /* ── Code / HTML Mode: Raw HTML Source Editor ─────────────────────── */
+            </div>
+
+            {/* ── Code / HTML Mode: Raw HTML Source Editor ─────────────────────── */}
+            <div
+              style={{
+                display: editorMode === 'code' ? 'flex' : 'none',
+                width: '100%',
+                flex: 1,
+                flexDirection: 'column'
+              }}
+            >
               <div className="blogger-code-workspace">
                 <div className="blogger-code-toolbar">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -890,7 +958,7 @@ export const CmsPageBuilderPage: React.FC = () => {
                   spellCheck={false}
                 />
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -1055,7 +1123,8 @@ export const CmsPageBuilderPage: React.FC = () => {
             videoData={{
               url: videoUrl,
               thumbnail: videoThumbnail || '/as_logo.webp',
-              title: videoTitle
+              title: videoTitle,
+              isHeroBanner: false
             }}
             deviceMode={deviceMode}
             onChangeDeviceMode={setDeviceMode}

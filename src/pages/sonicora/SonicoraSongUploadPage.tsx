@@ -1,21 +1,44 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Music, Upload, CheckCircle2 } from 'lucide-react';
-import { initialMovies } from '../../data/mockData';
+import { validateAdminUploadSize, formatFileSize } from '../../utils/uploadLimit';
 
 export const SonicoraSongUploadPage: React.FC = () => {
   const navigate = useNavigate();
   const [songName, setSongName] = useState('');
-  const [movieName, setMovieName] = useState(initialMovies[0]?.movie_name || '');
-  const [heroName, setHeroName] = useState(initialMovies[0]?.hero || '');
+  const [movieName, setMovieName] = useState('');
+  const [heroName, setHeroName] = useState('');
   const [singer, setSinger] = useState('');
   const [language, setLanguage] = useState('Telugu');
   const [duration, setDuration] = useState('3:45');
   const [category, setCategory] = useState('Melody');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const check = validateAdminUploadSize(file);
+      if (!check.valid) {
+        setFileError(check.error || 'Audio file exceeds the 1 GB admin limit.');
+        e.target.value = '';
+        setAudioFile(null);
+        return;
+      }
+      setFileError(null);
+      setAudioFile(file);
+      if (!songName) {
+        setSongName(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+      }
+    } else {
+      setAudioFile(null);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (fileError) return;
     setSubmitted(true);
     setTimeout(() => {
       navigate('/sonicora');
@@ -49,25 +72,17 @@ export const SonicoraSongUploadPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label" htmlFor="movie_se">
-                Select Movie Album <span className="star">*</span>
+                Movie Album Title <span className="star">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 id="movie_se"
-                className="form-select"
+                className="form-control"
                 value={movieName}
-                onChange={e => {
-                  setMovieName(e.target.value);
-                  const found = initialMovies.find(m => m.movie_name === e.target.value);
-                  if (found) setHeroName(found.hero);
-                }}
+                onChange={e => setMovieName(e.target.value)}
+                placeholder="Enter movie title"
                 required
-              >
-                {initialMovies.map(m => (
-                  <option key={m.movie_id} value={m.movie_name}>
-                    {m.movie_name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="form-group">
@@ -140,8 +155,22 @@ export const SonicoraSongUploadPage: React.FC = () => {
               id="music_file"
               className="form-input"
               accept="audio/*"
+              onChange={handleAudioChange}
               required
             />
+            {audioFile && (
+              <p style={{ fontSize: '0.78rem', color: '#16a34a', marginTop: '4px' }}>
+                Selected: {audioFile.name} ({formatFileSize(audioFile.size)})
+              </p>
+            )}
+            {fileError && (
+              <p style={{ fontSize: '0.78rem', color: '#ef4444', marginTop: '4px' }}>
+                {fileError}
+              </p>
+            )}
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+              Admin Panel Upload Limit: up to 1 GB per audio master
+            </span>
           </div>
 
           <div className="form-row-2col">

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Plus, Languages, Trash2, Edit2, RefreshCw } from 'lucide-react';
-import { initialLanguages } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Language } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api';
 
 export const SkiltrixLanguagesPage: React.FC = () => {
-  const [languages, setLanguages] = useState<Language[]>(initialLanguages);
+  const [languages, setLanguages] = useState<Language[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Form states
   const [languageName, setLanguageName] = useState('');
@@ -19,11 +19,12 @@ export const SkiltrixLanguagesPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getLanguages();
+      setLanguages(data || []);
       if (data && data.length > 0) {
-        setLanguages(data);
         setIsLive(true);
       }
     } catch {
+      setLanguages([]);
       setIsLive(false);
     } finally {
       setLoading(false);
@@ -98,7 +99,20 @@ export const SkiltrixLanguagesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {languages.map(lang => (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '3rem' }}>
+                    <LoadingSpinner message="Retrieving languages from database..." />
+                  </td>
+                </tr>
+              ) : languages.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    No languages found in database.
+                  </td>
+                </tr>
+              ) : (
+                languages.map(lang => (
                 <tr key={lang.language_id}>
                   <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>{lang.name}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -117,7 +131,7 @@ export const SkiltrixLanguagesPage: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

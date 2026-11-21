@@ -14,7 +14,6 @@ import {
   Server
 } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialActivityLogs } from '../../data/mockData';
 import { ActivityLog, LogEntry } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { Badge } from '../../components/common/Badge';
@@ -25,7 +24,7 @@ export const UserLogActivityPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedActivity, setSelectedActivity] = useState<ActivityLog | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(1851);
+  const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 10;
 
   const fetchActivities = async () => {
@@ -41,12 +40,12 @@ export const UserLogActivityPage: React.FC = () => {
           time: l.time || 'Recent'
         }));
         setActivities(mapped);
-        setTotalCount(logs.length >= 100 ? 1851 : logs.length);
+        setTotalCount(logs.length);
       } else {
-        setActivities(initialActivityLogs);
+        setActivities([]);
       }
     } catch {
-      setActivities(initialActivityLogs);
+      setActivities([]);
     } finally {
       setLoading(false);
     }

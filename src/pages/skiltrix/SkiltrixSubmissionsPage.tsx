@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Check, X, ExternalLink, RefreshCw, Loader2, Code2, Trash2 } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialSubmissions } from '../../data/mockData';
 import { Submission } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -15,9 +14,9 @@ export const SkiltrixSubmissionsPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getSubmissions();
-      setSubmissions(data && data.length > 0 ? data : initialSubmissions);
+      setSubmissions(data || []);
     } catch {
-      setSubmissions(initialSubmissions);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }

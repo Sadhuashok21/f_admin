@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, AlertTriangle, RefreshCw, Loader2, ShieldAlert } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialLogs } from '../../data/mockData';
 import { LogEntry } from '../../types';
 
 export const SFSLogsPage: React.FC = () => {
@@ -13,9 +12,9 @@ export const SFSLogsPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getLogs({ type: 'errors', limit: 100 });
-      setLogs(data && data.length > 0 ? data : initialLogs);
+      setLogs(data || []);
     } catch {
-      setLogs(initialLogs);
+      setLogs([]);
     } finally {
       setLoading(false);
     }

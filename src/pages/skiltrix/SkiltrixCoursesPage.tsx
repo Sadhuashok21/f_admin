@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, BookOpen, Trash2, Upload, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialCourses } from '../../data/mockData';
 import { Course } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -24,9 +23,9 @@ export const SkiltrixCoursesPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getCourses();
-      setCourses(data && data.length > 0 ? data : initialCourses);
+      setCourses(data || []);
     } catch {
-      setCourses(initialCourses);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -128,7 +127,14 @@ export const SkiltrixCoursesPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {courses.map(course => (
+                {courses.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                      No courses found in database.
+                    </td>
+                  </tr>
+                ) : (
+                  courses.map(course => (
                   <tr key={course.course_id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -187,7 +193,7 @@ export const SkiltrixCoursesPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           )}

@@ -6,7 +6,6 @@ import {
   Building2,
   Film,
   Languages,
-  FolderGit2,
   Users,
   FileCheck,
   RefreshCw,
@@ -14,16 +13,11 @@ import {
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { api } from '../../services/api';
-import { initialInternships, initialCourses, initialCompanies, initialVideos, initialLanguages, initialSubmissions } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 
 export const SkiltrixOverviewPage: React.FC = () => {
   const [stats, setStats] = useState({
-    internships: initialInternships.length,
-    courses: initialCourses.length,
-    companies: initialCompanies.length,
-    languages: initialLanguages.length,
-    videos: initialVideos.length,
-    submissions: initialSubmissions.length
+    internships: 0, courses: 0, companies: 0, languages: 0, videos: 0, submissions: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -67,56 +61,60 @@ export const SkiltrixOverviewPage: React.FC = () => {
       </div>
 
       {/* Top Stat Cards - 6 Live Metrics */}
-      <div className="stats-grid">
-        <StatCard
-          title="Active Internships"
-          value={stats.internships}
-          trend="15.2"
-          trendDirection="up"
-          comparisonText="Across top industry tech leaders"
-          icon={<Briefcase size={20} color="var(--primary)" />}
-        />
-        <StatCard
-          title="Available Courses"
-          value={stats.courses}
-          trend="22.5"
-          trendDirection="up"
-          comparisonText="From beginner to advanced tracks"
-          icon={<BookOpen size={20} color="var(--success)" />}
-        />
-        <StatCard
-          title="Partner Companies"
-          value={stats.companies}
-          trend="8.1"
-          trendDirection="up"
-          comparisonText="Global technology enterprise partners"
-          icon={<Building2 size={20} color="#8b5cf6" />}
-        />
-        <StatCard
-          title="Programming Languages"
-          value={stats.languages}
-          trend="11.4"
-          trendDirection="up"
-          comparisonText="Live compiler runtimes in MySQL"
-          icon={<Languages size={20} color="var(--warning)" />}
-        />
-        <StatCard
-          title="Lecture Videos"
-          value={stats.videos}
-          trend="18.9"
-          trendDirection="up"
-          comparisonText="Streamed curriculum modules"
-          icon={<Film size={20} color="var(--info)" />}
-        />
-        <StatCard
-          title="Student Submissions"
-          value={stats.submissions}
-          trend="14.3"
-          trendDirection="up"
-          comparisonText="Evaluated solutions & code tests"
-          icon={<FileCheck size={20} color="#ec4899" />}
-        />
-      </div>
+      {loading ? (
+        <LoadingSpinner message="Retrieving SkilTrix metrics from database..." />
+      ) : (
+        <div className="stats-grid">
+          <StatCard
+            title="Active Internships"
+            value={stats.internships}
+            trend="15.2"
+            trendDirection="up"
+            comparisonText="Across top industry tech leaders"
+            icon={<Briefcase size={20} color="var(--primary)" />}
+          />
+          <StatCard
+            title="Available Courses"
+            value={stats.courses}
+            trend="22.5"
+            trendDirection="up"
+            comparisonText="From beginner to advanced tracks"
+            icon={<BookOpen size={20} color="var(--success)" />}
+          />
+          <StatCard
+            title="Partner Companies"
+            value={stats.companies}
+            trend="8.1"
+            trendDirection="up"
+            comparisonText="Global technology enterprise partners"
+            icon={<Building2 size={20} color="#8b5cf6" />}
+          />
+          <StatCard
+            title="Programming Languages"
+            value={stats.languages}
+            trend="11.4"
+            trendDirection="up"
+            comparisonText="Live compiler runtimes in MySQL"
+            icon={<Languages size={20} color="var(--warning)" />}
+          />
+          <StatCard
+            title="Lecture Videos"
+            value={stats.videos}
+            trend="18.9"
+            trendDirection="up"
+            comparisonText="Streamed curriculum modules"
+            icon={<Film size={20} color="var(--info)" />}
+          />
+          <StatCard
+            title="Student Submissions"
+            value={stats.submissions}
+            trend="14.3"
+            trendDirection="up"
+            comparisonText="Evaluated solutions & code tests"
+            icon={<FileCheck size={20} color="#ec4899" />}
+          />
+        </div>
+      )}
 
       {/* Quick Navigation Cards */}
       <div className="card">
@@ -182,16 +180,6 @@ export const SkiltrixOverviewPage: React.FC = () => {
             <div>
               <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>Submissions ({stats.submissions})</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Student project evaluations</div>
-            </div>
-          </Link>
-
-          <Link to="/skiltrix/file-system" className="card" style={{ marginBottom: 0, textDecoration: 'none', transition: 'transform 0.2s', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ padding: '12px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', borderRadius: '10px' }}>
-              <FolderGit2 size={24} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>WYSIWYG File System</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Document editor & code viewer</div>
             </div>
           </Link>
 
