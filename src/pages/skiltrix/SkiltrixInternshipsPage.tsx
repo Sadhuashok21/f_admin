@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, MapPin, Calendar, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialInternships, initialCompanies } from '../../data/mockData';
 import { Internship, Company } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -29,15 +28,15 @@ export const SkiltrixInternshipsPage: React.FC = () => {
         api.getInternships(),
         api.getCompanies()
       ]);
-      setInternships(internData && internData.length > 0 ? internData : initialInternships);
-      const comps = compData && compData.length > 0 ? compData : initialCompanies;
+      setInternships(internData || []);
+      const comps = compData || [];
       setCompanies(comps);
       if (comps.length > 0 && !companyId) {
         setCompanyId(comps[0].company_id);
       }
     } catch {
-      setInternships(initialInternships);
-      setCompanies(initialCompanies);
+      setInternships([]);
+      setCompanies([]);
     } finally {
       setLoading(false);
     }
@@ -142,7 +141,14 @@ export const SkiltrixInternshipsPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {internships.map(intern => (
+                {internships.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                      No internships found in database.
+                    </td>
+                  </tr>
+                ) : (
+                  internships.map(intern => (
                   <tr key={intern.internship_id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -229,7 +235,7 @@ export const SkiltrixInternshipsPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           )}

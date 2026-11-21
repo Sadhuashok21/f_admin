@@ -113,12 +113,21 @@ export const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
       ],
       shouldNotGroupWhenFull: true
     },
-    // Preserve all HTML tags, classes, and inline styles
+    // Preserve all HTML tags, classes, and inline styles (including iframes and embedded video widgets)
     htmlSupport: {
       allow: [
         {
           name: /.*/,
           attributes: true,
+          classes: true,
+          styles: true
+        },
+        {
+          name: 'iframe',
+          attributes: [
+            'src', 'width', 'height', 'title', 'frameborder', 'allow',
+            'allowfullscreen', 'style', 'class', 'loading', 'referrerpolicy'
+          ],
           classes: true,
           styles: true
         }
@@ -169,6 +178,13 @@ export const CKEditorWrapper: React.FC<CKEditorWrapperProps> = ({
       contentToolbar: [
         'tableColumn', 'tableRow', 'mergeTableCells',
         'tableProperties', 'tableCellProperties'
+      ]
+    },
+    image: {
+      toolbar: [
+        'imageTextAlternative', 'toggleImageCaption', '|',
+        'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|',
+        'linkImage'
       ]
     },
     codeBlock: {

@@ -11,6 +11,7 @@ interface LivePreviewFrameProps {
     url?: string;
     thumbnail?: string;
     title?: string;
+    isHeroBanner?: boolean;
   };
   deviceMode: 'desktop' | 'tablet' | 'mobile';
   onChangeDeviceMode: (mode: 'desktop' | 'tablet' | 'mobile') => void;
@@ -177,17 +178,17 @@ export const LivePreviewFrame: React.FC<LivePreviewFrameProps> = ({
             {title || 'Untitled Educational Topic'}
           </h1>
 
-          {/* YouTube Video Header if present */}
-          {videoHtml && <div dangerouslySetInnerHTML={{ __html: videoHtml }} />}
+          {/* Optional Hero Header Video (only shown if explicitly designated as Hero Banner) */}
+          {videoData?.isHeroBanner && videoHtml && <div dangerouslySetInnerHTML={{ __html: videoHtml }} />}
 
           {/* Injected Scoped CSS */}
           <style>{customCss}</style>
 
-          {/* Educational Content */}
+          {/* Educational Content with Custom Inline Videos, Code Blocks, and Elements */}
           <div
             className="generated-content"
             style={{ lineHeight: 1.7, fontSize: '15px', color: '#cbd5e1' }}
-            dangerouslySetInnerHTML={{ __html: htmlContent || '<p style="color: #64748b; font-style: italic;">No content written yet. Type in CKEditor or insert blocks from the left palette to see live rendering...</p>' }}
+            dangerouslySetInnerHTML={{ __html: htmlContent || '<p style="color: #64748b; font-style: italic;">No content written yet. Type in the editor or insert videos, code blocks, and components to see live preview...</p>' }}
           />
 
           {/* Next/Prev Navigation Mock */}

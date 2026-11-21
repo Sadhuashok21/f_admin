@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
-import { initialCompanyBlueprints } from '../../data/mockData';
 import { CompanyBlueprintItem } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -39,9 +38,9 @@ export const SkiltrixCompanyBlueprintsPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getCompanyBlueprints();
-      setBlueprints(data && data.length > 0 ? data : initialCompanyBlueprints);
+      setBlueprints(data || []);
     } catch {
-      setBlueprints(initialCompanyBlueprints);
+      setBlueprints([]);
     } finally {
       setLoading(false);
     }

@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
-import { initialCompanyMocks } from '../../data/mockData';
 import { CompanyMockItem, QuestionItem, AssessmentSectionItem } from '../../types';
 import { Modal } from '../../components/common/Modal';
 
@@ -81,9 +80,9 @@ export const SkiltrixMocksPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getCompanyMocks();
-      setMocks(data && data.length > 0 ? data : initialCompanyMocks);
+      setMocks(data || []);
     } catch {
-      setMocks(initialCompanyMocks);
+      setMocks([]);
     } finally {
       setLoading(false);
     }

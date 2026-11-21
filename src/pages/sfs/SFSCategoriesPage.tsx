@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, FolderTree, RefreshCw, Trash2, Rocket, Edit2 } from 'lucide-react';
-import { initialCategories } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { BlueprintCategory } from '../../types';
 import { api } from '../../services/api';
 import { getSfsImageUrl } from '../../utils/cdn';
 
 export const SFSCategoriesPage: React.FC = () => {
-  const [categories, setCategories] = useState<BlueprintCategory[]>(initialCategories);
+  const [categories, setCategories] = useState<BlueprintCategory[]>([]);
   const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchCategories = async () => {
     setLoading(true);
     try {
       const data = await api.getCategories();
-      if (data && data.length > 0) {
-        setCategories(data);
-        setIsLive(true);
-      }
+      setCategories(data || []); if (data && data.length > 0) setIsLive(true);
     } catch {
       setIsLive(false);
     } finally {
@@ -79,8 +76,15 @@ export const SFSCategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
-        {categories.map(cat => (
+      {loading ? (
+        <LoadingSpinner message="Retrieving categories from database..." />
+      ) : categories.length === 0 ? (
+        <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          No categories found in database.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
+          {categories.map(cat => (
           <div key={cat.id || cat.bp_name} className="card" style={{ padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ height: '160px', width: '100%', position: 'relative' }}>
               <img
@@ -158,6 +162,7 @@ export const SFSCategoriesPage: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 };

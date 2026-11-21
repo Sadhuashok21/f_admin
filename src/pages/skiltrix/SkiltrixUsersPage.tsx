@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Loader2, RefreshCw, Mail, GraduationCap } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialUsers } from '../../data/mockData';
 import { User } from '../../types';
 import { getStImageUrl } from '../../utils/cdn';
 
@@ -14,9 +13,9 @@ export const SkiltrixUsersPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await api.getUsers({ limit: 100 });
-      setUsers(data && data.length > 0 ? data : initialUsers);
+      setUsers(data || []);
     } catch {
-      setUsers(initialUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

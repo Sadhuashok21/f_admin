@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Trash2, Upload, CheckCircle2, AlertCircle, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialBlueprints } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Blueprint } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { getSfsImageUrl } from '../../utils/cdn';
@@ -45,40 +45,34 @@ export const SFSEditBlueprintPage: React.FC = () => {
     const loadBlueprint = async () => {
       setLoading(true);
       try {
-        let bp = await api.getBlueprint(bpId);
-        if (!bp) {
-          bp = initialBlueprints.find(b => b.bp_id === bpId) || initialBlueprints[0];
+        const bp = await api.getBlueprint(bpId);
+        setBlueprint(bp || null);
+        if (bp) {
+          setName(bp.name);
+          setType(bp.type || 'blueprint');
+          setSfsLink(bp.sfs_link || '');
+          setStatus(bp.status);
+
+          setRealViews(bp.views || 0);
+          setRealLikes(bp.likes || 0);
+          setRealDownloads(bp.downloads || 0);
+          setRealShares(bp.share || 0);
+
+          setFakeViews(bp.fviews ?? bp.views);
+          setFakeLikes(bp.flikes ?? bp.likes);
+          setFakeDownloads(bp.fdownloads ?? bp.downloads);
+          setFakeShares(bp.fshare ?? (bp.share || 0));
+
+          let allImgs: string[] = [];
+          if (bp.images && Array.isArray(bp.images) && bp.images.length > 0) {
+            allImgs = bp.images.map(img => getSfsImageUrl(img));
+          } else if (bp.image) {
+            allImgs = [getSfsImageUrl(bp.image)];
+          }
+          setImages(allImgs.filter(Boolean));
         }
-        setBlueprint(bp);
-        setName(bp.name);
-        setType(bp.type || 'blueprint');
-        setSfsLink(bp.sfs_link || '');
-        setStatus(bp.status);
-
-        setRealViews(bp.views || 0);
-        setRealLikes(bp.likes || 0);
-        setRealDownloads(bp.downloads || 0);
-        setRealShares(bp.share || 0);
-
-        setFakeViews(bp.fviews ?? bp.views);
-        setFakeLikes(bp.flikes ?? bp.likes);
-        setFakeDownloads(bp.fdownloads ?? bp.downloads);
-        setFakeShares(bp.fshare ?? (bp.share || 0));
-
-        let allImgs: string[] = [];
-        if (bp.images && Array.isArray(bp.images) && bp.images.length > 0) {
-          allImgs = bp.images.map(img => getSfsImageUrl(img));
-        } else if (bp.image) {
-          allImgs = [getSfsImageUrl(bp.image)];
-        }
-        setImages(allImgs.filter(Boolean));
       } catch {
-        const fallback = initialBlueprints.find(b => b.bp_id === bpId) || initialBlueprints[0];
-        setBlueprint(fallback);
-        setName(fallback.name);
-        setType(fallback.type);
-        setSfsLink(fallback.sfs_link || '');
-        setStatus(fallback.status);
+        setBlueprint(null);
       } finally {
         setLoading(false);
       }
@@ -251,18 +245,21 @@ export const SFSEditBlueprintPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="sfs_link">
-              SFS Sharing Link <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', fontWeight: 'normal' }}>(Optional)</span>
-            </label>
-            <textarea
-              id="sfs_link"
-              className="form-textarea"
-              value={sfsLink}
-              onChange={e => setSfsLink(e.target.value)}
-              placeholder="https://sharing.spaceflightsimulator.app/rocket/... (Optional)"
-            />
-          </div>
+          {(type === 'blueprint' || type === 'bp') && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="sfs_link">
+                SFS Sharing Link <span className="star">*</span>
+              </label>
+              <textarea
+                id="sfs_link"
+                className="form-textarea"
+                value={sfsLink}
+                onChange={e => setSfsLink(e.target.value)}
+                placeholder="https://sharing.spaceflightsimulator.app/rocket/..."
+                required
+              />
+            </div>
+          )}
         </div>
 
         {/* Real vs Fake Metrics Grid matching edit_bp.html .real_fake */}

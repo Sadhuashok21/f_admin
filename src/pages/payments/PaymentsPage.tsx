@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { CreditCard, Landmark, Plus, CheckCircle2, History, AlertCircle, ShieldAlert } from 'lucide-react';
 import { indianBanks } from '../../data/indianBanks';
-import { initialBankAccounts } from '../../data/mockData';
 import { BankAccount } from '../../types';
 
 export const PaymentsPage: React.FC = () => {
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(initialBankAccounts);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [yourName, setYourName] = useState('');
   const [bankName, setBankName] = useState('');
   const [ifsc, setIfsc] = useState('');
@@ -66,7 +65,7 @@ export const PaymentsPage: React.FC = () => {
             </div>
           </div>
           <div className="stat-value" style={{ color: 'var(--primary)' }}>
-            $43.00
+            $0.00
           </div>
           <p className="stat-footer">
             Paid monthly if total is at least <b>US$100.00</b> (your payout threshold).
@@ -74,7 +73,20 @@ export const PaymentsPage: React.FC = () => {
         </div>
 
         {/* Primary Bank Card */}
-        {bankAccounts.map((acc, idx) => (
+        {bankAccounts.length === 0 ? (
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-title">Payout Method</span>
+              <div className="stat-icon" style={{ background: 'rgba(100,116,139,0.1)', color: 'var(--text-muted)' }}>
+                <Landmark size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+              No bank account linked. Add your payout details below.
+            </div>
+          </div>
+        ) : (
+          bankAccounts.map((acc, idx) => (
           <div key={idx} className="stat-card" style={{ borderLeft: '4px solid var(--success)' }}>
             <div className="stat-header">
               <span className="stat-title">Payout Method</span>
@@ -96,7 +108,7 @@ export const PaymentsPage: React.FC = () => {
               <span>Verified Primary Account</span>
             </div>
           </div>
-        ))}
+        )))}
 
         {/* Transactions Card */}
         <div className="stat-card">

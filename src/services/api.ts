@@ -17,20 +17,6 @@ import {
   ContactSubmission,
   ContactMetrics
 } from '../types';
-import {
-  initialUsers,
-  initialBlueprints,
-  initialCategories,
-  initialLanguages,
-  initialLogs,
-  initialInternships,
-  initialCompanies,
-  initialCourses,
-  initialVideos,
-  initialSubmissions,
-  initialCompanyMocks,
-  initialCompanyBlueprints
-} from '../data/mockData';
 import { getStImageUrl, getStVideoUrl } from '../utils/cdn';
 import { VideoComment } from '../types';
 
@@ -55,6 +41,7 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
 
     const baseHeaders: Record<string, string> = {
       'Accept': 'application/json',
+      'X-Admin-Portal': 'true',
       ...authHeaders,
       ...(options?.headers as Record<string, string> || {})
     };
@@ -106,6 +93,7 @@ export const api = {
       
       xhr.open('POST', `${API_BASE}/apps/skiltrix/api/actions/upload-cdn-asset/`);
       xhr.withCredentials = true;
+      xhr.setRequestHeader('X-Admin-Portal', 'true');
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
@@ -223,10 +211,10 @@ export const api = {
     const result = await fetchWithFallback<{ status: boolean; total: number; users: User[] }>(
       `/api/admin/users/?${query.toString()}`,
       { method: 'GET' },
-      { status: true, total: initialUsers.length, users: initialUsers }
+      { status: true, total: 0, users: [] }
     );
 
-    return result.users || initialUsers;
+    return result.users || [];
   },
 
   async createUser(userData: { name: string; email: string; type?: string; platform?: string; status?: string }) {
@@ -273,10 +261,10 @@ export const api = {
     const result = await fetchWithFallback<{ status: boolean; total: number; blueprints: Blueprint[] }>(
       `/api/admin/blueprints/?${query.toString()}`,
       { method: 'GET' },
-      { status: true, total: initialBlueprints.length, blueprints: initialBlueprints }
+      { status: true, total: 0, blueprints: [] }
     );
 
-    return result.blueprints || initialBlueprints;
+    return result.blueprints || [];
   },
 
   async getPaginatedBlueprints(params?: { search?: string; type?: string; status?: string; page?: number; limit?: number }) {
@@ -290,12 +278,12 @@ export const api = {
     const result = await fetchWithFallback<{ status: boolean; total: number; blueprints: Blueprint[] }>(
       `/api/admin/blueprints/?${query.toString()}`,
       { method: 'GET' },
-      { status: true, total: initialBlueprints.length, blueprints: initialBlueprints }
+      { status: true, total: 0, blueprints: [] }
     );
 
     return {
-      total: result.total ?? (result.blueprints?.length || initialBlueprints.length),
-      blueprints: result.blueprints || initialBlueprints,
+      total: result.total ?? (result.blueprints?.length || 0),
+      blueprints: result.blueprints || [],
     };
   },
 
@@ -305,7 +293,7 @@ export const api = {
       { method: 'GET' },
       {
         status: true,
-        blueprint: initialBlueprints.find(b => b.bp_id === bpId) || initialBlueprints[0]
+        blueprint: undefined
       }
     );
     return result.blueprint || null;
@@ -371,9 +359,9 @@ export const api = {
     const result = await fetchWithFallback<{ status: boolean; categories: BlueprintCategory[] }>(
       '/api/admin/categories/',
       { method: 'GET' },
-      { status: true, categories: initialCategories }
+      { status: true, categories: [] }
     );
-    return result.categories || initialCategories;
+    return result.categories || [];
   },
 
   async createCategory(
@@ -427,10 +415,10 @@ export const api = {
     const result = await fetchWithFallback<{ status: boolean; total: number; logs: LogEntry[] }>(
       `/api/admin/logs/?${query.toString()}`,
       { method: 'GET' },
-      { status: true, total: initialLogs.length, logs: initialLogs }
+      { status: true, total: 0, logs: [] }
     );
 
-    return result.logs || initialLogs;
+    return result.logs || [];
   },
 
   /**
@@ -464,7 +452,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/languages/',
       { method: 'GET' },
-      initialLanguages
+      []
     );
 
     return (result || []).map((l: any) => ({
@@ -519,7 +507,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/internships/',
       { method: 'GET' },
-      initialInternships
+      []
     );
 
     if (Array.isArray(result) && result.length > 0) {
@@ -542,7 +530,7 @@ export const api = {
         created_at: i.created_at ? i.created_at.split('T')[0] : '2026-10-01'
       }));
     }
-    return initialInternships;
+    return [];
   },
 
   async createInternship(data: any): Promise<Internship> {
@@ -632,7 +620,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/companies/',
       { method: 'GET' },
-      initialCompanies
+      []
     );
 
     if (Array.isArray(result) && result.length > 0) {
@@ -646,7 +634,7 @@ export const api = {
         internships_count: c.roadmaps ? c.roadmaps.length : 1
       }));
     }
-    return initialCompanies;
+    return [];
   },
 
   async createCompany(data: { name: string; description?: string; image?: string; status?: 'active' | 'inactive' }): Promise<Company> {
@@ -704,7 +692,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/courses/',
       { method: 'GET' },
-      initialCourses
+      []
     );
 
     if (Array.isArray(result) && result.length > 0) {
@@ -720,7 +708,7 @@ export const api = {
         created_at: c.created_at ? c.created_at.split('T')[0] : '2026-10-01'
       }));
     }
-    return initialCourses;
+    return [];
   },
 
   async createCourse(data: { name: string; type?: string; price?: number; paid?: 0 | 1; description?: string; image?: string }): Promise<Course> {
@@ -785,7 +773,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/videos/',
       { method: 'GET' },
-      initialVideos
+      []
     );
 
     if (Array.isArray(result) && result.length > 0) {
@@ -802,7 +790,7 @@ export const api = {
         comments_count: v.comments_count || (Array.isArray(v.comments) ? v.comments.length : 0)
       }));
     }
-    return initialVideos;
+    return [];
   },
 
   async createVideo(data: { title: string; description?: string; video?: string; image?: string; course_id?: string }): Promise<Video> {
@@ -922,7 +910,7 @@ export const api = {
     const result = await fetchWithFallback<any[]>(
       '/apps/skiltrix/api/submissions/',
       { method: 'GET' },
-      initialSubmissions
+      []
     );
 
     if (Array.isArray(result) && result.length > 0) {
@@ -946,7 +934,7 @@ export const api = {
         };
       });
     }
-    return initialSubmissions;
+    return [];
   },
 
   async updateSubmissionStatus(id: string, status: 'approved' | 'rejected' | 'pending', score?: number): Promise<boolean> {
@@ -998,12 +986,12 @@ export const api = {
       };
     } catch {
       return {
-        internships: initialInternships.length,
-        courses: initialCourses.length,
-        companies: initialCompanies.length,
-        languages: initialLanguages.length,
-        videos: initialVideos.length,
-        submissions: initialSubmissions.length
+        internships: [].length,
+        courses: [].length,
+        companies: [].length,
+        languages: [].length,
+        videos: [].length,
+        submissions: [].length
       };
     }
   },
@@ -1015,10 +1003,10 @@ export const api = {
     const result = await fetchWithFallback<any>(
       '/apps/skiltrix/api/assessments/',
       { method: 'GET' },
-      initialCompanyMocks
+      []
     );
 
-    const list = Array.isArray(result) ? result : (result?.results || initialCompanyMocks);
+    const list = Array.isArray(result) ? result : (result?.results || []);
     if (Array.isArray(list) && list.length > 0) {
       return list.map((item: any) => ({
         id: item.id,
@@ -1041,7 +1029,7 @@ export const api = {
         created_at: item.created_at ? item.created_at.split('T')[0] : '2026-10-01'
       }));
     }
-    return initialCompanyMocks;
+    return [];
   },
 
   async createCompanyMock(data: Partial<CompanyMockItem>): Promise<CompanyMockItem> {
@@ -1104,10 +1092,10 @@ export const api = {
     const result = await fetchWithFallback<any>(
       '/apps/skiltrix/api/blueprints/',
       { method: 'GET' },
-      initialCompanyBlueprints
+      []
     );
 
-    const list = Array.isArray(result) ? result : (result?.results || initialCompanyBlueprints);
+    const list = Array.isArray(result) ? result : (result?.results || []);
     if (Array.isArray(list) && list.length > 0) {
       return list.map((item: any) => ({
         id: item.id,
@@ -1126,7 +1114,7 @@ export const api = {
         mock_linked: true
       }));
     }
-    return initialCompanyBlueprints;
+    return [];
   },
 
   async createCompanyBlueprint(data: Partial<CompanyBlueprintItem>): Promise<CompanyBlueprintItem> {

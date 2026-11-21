@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { Database, Table, Plus, Trash2, ArrowLeft, RefreshCw, AlertTriangle, Layers, HardDrive } from 'lucide-react';
-import { initialDatabases, initialDatabaseTables } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { DatabaseInfo, TableInfo } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api';
 
 export const DatabaseManagerPage: React.FC = () => {
-  const [databases, setDatabases] = useState<DatabaseInfo[]>(initialDatabases);
-  const [tablesMap, setTablesMap] = useState<Record<string, TableInfo[]>>(initialDatabaseTables);
+  const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
+  const [tablesMap, setTablesMap] = useState<Record<string, TableInfo[]>>({});
   const [selectedDb, setSelectedDb] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchDatabaseInfo = async () => {
     setLoading(true);
@@ -177,7 +177,20 @@ export const DatabaseManagerPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {databases.map(db => (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '3rem' }}>
+                    <LoadingSpinner message="Retrieving database instances from MySQL..." />
+                  </td>
+                </tr>
+              ) : databases.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    No database instances found.
+                  </td>
+                </tr>
+              ) : (
+                databases.map(db => (
                 <tr key={db.name}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -215,7 +228,7 @@ export const DatabaseManagerPage: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Film, Upload, CheckCircle2 } from 'lucide-react';
+import { validateAdminUploadSize } from '../../utils/uploadLimit';
 
 export const SonicoraMovieUploadPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ export const SonicoraMovieUploadPage: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const check = validateAdminUploadSize(file);
+      if (!check.valid) {
+        alert(check.error || 'File exceeds the 1 GB admin upload limit.');
+        e.target.value = '';
+        setPosterPreview('');
+        return;
+      }
       setPosterPreview(URL.createObjectURL(file));
     }
   };

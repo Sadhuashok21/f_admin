@@ -29,7 +29,6 @@ import { SkiltrixCoursesPage } from './pages/skiltrix/SkiltrixCoursesPage';
 import { SkiltrixVideosPage } from './pages/skiltrix/SkiltrixVideosPage';
 import { SkiltrixCommentsPage } from './pages/skiltrix/SkiltrixCommentsPage';
 import { SkiltrixCompaniesPage } from './pages/skiltrix/SkiltrixCompaniesPage';
-import { SkiltrixFileSystemPage } from './pages/skiltrix/SkiltrixFileSystemPage';
 import { SkiltrixLanguagesPage } from './pages/skiltrix/SkiltrixLanguagesPage';
 import { SkiltrixUsersPage } from './pages/skiltrix/SkiltrixUsersPage';
 import { SkiltrixSubmissionsPage } from './pages/skiltrix/SkiltrixSubmissionsPage';
@@ -107,8 +106,6 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/videos" element={<SkiltrixVideosPage />} />
               <Route path="/skiltrix/comments" element={<SkiltrixCommentsPage />} />
               <Route path="/skiltrix/companies" element={<SkiltrixCompaniesPage />} />
-              <Route path="/skiltrix/code" element={<SkiltrixFileSystemPage />} />
-              <Route path="/skiltrix/file-system" element={<SkiltrixFileSystemPage />} />
               <Route path="/skiltrix/languages" element={<SkiltrixLanguagesPage />} />
               <Route path="/skiltrix/users" element={<SkiltrixUsersPage />} />
               <Route path="/skiltrix/submissions" element={<SkiltrixSubmissionsPage />} />

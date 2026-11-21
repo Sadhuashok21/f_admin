@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { User } from '../../types';
-import { initialUsers } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { getStImageUrl } from '../../utils/cdn';
@@ -29,19 +29,11 @@ const formatAnalyticsDate = (date: string, options: Intl.DateTimeFormatOptions) 
   new Date(`${date}T00:00:00`).toLocaleDateString(undefined, options);
 
 export const DashboardPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(false);
   const [stats, setStats] = useState({
-    total_blueprints: 111,
-    approved_blueprints: 110,
-    total_categories: 13,
-    total_users: 17,
-    total_views: 31,
-    total_downloads: 6,
-    total_likes: 2,
-    total_activities: 1851,
-    total_errors: 260,
+    total_blueprints: 0, approved_blueprints: 0, total_categories: 0, total_users: 0, total_views: 0, total_downloads: 0, total_likes: 0, total_activities: 0, total_errors: 0,
     total_inquiries: 0,
     pending_inquiries: 0
   });
@@ -73,13 +65,13 @@ export const DashboardPage: React.FC = () => {
       }
       setIsLive(Boolean(connected && statsRes?.status));
 
-      setUsers(connected ? usersRes : initialUsers);
+      setUsers(connected && usersRes ? usersRes : []);
       setChartPoints(analyticsRes.status ? analyticsRes.daily : []);
       setAnalyticsMessage(
         analyticsRes.status ? '' : 'Daily analytics are unavailable. Check the API and sync again.'
       );
     } catch (e) {
-      console.warn('Dashboard using fallback mock data', e);
+      console.warn('Dashboard failed to load live data:', e);
       setIsLive(false);
       setChartPoints([]);
       setAnalyticsMessage('Daily analytics could not be loaded. Check the API and sync again.');
@@ -510,7 +502,20 @@ export const DashboardPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {users.slice(0, 5).map(u => (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem' }}>
+                    <LoadingSpinner message="Retrieving registered users from database..." />
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    No registered users found in database.
+                  </td>
+                </tr>
+              ) : (
+                users.slice(0, 5).map(u => (
                 <tr key={u.id}>
                   <td>
                     <img
@@ -547,7 +552,7 @@ export const DashboardPage: React.FC = () => {
                     </Link>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

@@ -21,7 +21,6 @@ import {
   Film,
   MessageSquare,
   Building2,
-  Code2,
   Languages,
   FolderGit2,
   Bug,
@@ -284,21 +283,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/skiltrix/code" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
-              <Code2 size={18} />
-              <span className="sidebar_icons_name">Code Sandbox</span>
-            </NavLink>
-          </li>
-          <li>
             <NavLink to="/skiltrix/languages" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
               <Languages size={18} />
               <span className="sidebar_icons_name">Languages</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/skiltrix/file-system" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
-              <FolderGit2 size={18} />
-              <span className="sidebar_icons_name">File System</span>
             </NavLink>
           </li>
           <li>

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Upload, ArrowLeft, CheckCircle2, Loader2, AlertCircle, Image as ImageIcon, FileArchive, X } from 'lucide-react';
 import { api } from '../../services/api';
-import { initialCategories } from '../../data/mockData';
 import { BlueprintCategory } from '../../types';
+import { validateAdminUploadSize, formatFileSize } from '../../utils/uploadLimit';
 
 export const SFSUploadBlueprintPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,22 +39,14 @@ export const SFSUploadBlueprintPage: React.FC = () => {
       setLoadingCats(true);
       try {
         const cats = await api.getCategories();
-        const available = cats && cats.length > 0 ? cats : initialCategories;
+        const available = cats || [];
         setCategories(available);
-        // Pre-select first 2 categories as chips by default to guide the user
-        if (available.length >= 2) {
-          setSelectedCategories([
-            String(available[0].category_id || available[0].id || available[0].bp_name),
-            String(available[1].category_id || available[1].id || available[1].bp_name)
-          ]);
-        } else if (available.length === 1) {
+        // Pre-select first category as chip by default to guide the user
+        if (available.length >= 1) {
           setSelectedCategories([String(available[0].category_id || available[0].id || available[0].bp_name)]);
         }
       } catch {
-        setCategories(initialCategories);
-        if (initialCategories.length >= 2) {
-          setSelectedCategories([String(initialCategories[0].id), String(initialCategories[1].id)]);
-        }
+        setCategories([]);
       } finally {
         setLoadingCats(false);
       }
@@ -110,15 +102,14 @@ export const SFSUploadBlueprintPage: React.FC = () => {
         setErrorMessage('Please select a valid .zip file archive.');
         return;
       }
+      const check = validateAdminUploadSize(file);
+      if (!check.valid) {
+        setErrorMessage(check.error || 'Zip archive exceeds the 1 GB admin upload limit.');
+        return;
+      }
       setZipFile(file);
       setErrorMessage(null);
     }
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,9 +121,14 @@ export const SFSUploadBlueprintPage: React.FC = () => {
       return;
     }
 
-    // Require above two chips ONLY for blueprints (Planets and Worlds & Mods do not need chips)
-    if (type === 'bp' && selectedCategories.length < 2) {
-      setErrorMessage(`Please select above two category chips (minimum 2 categories required, currently ${selectedCategories.length} selected).`);
+    // Require at least one chip ONLY for blueprints (Planets and Worlds & Mods do not need chips)
+    if (type === 'bp' && selectedCategories.length < 1) {
+      setErrorMessage('Please select at least one category chip.');
+      return;
+    }
+
+    if (type === 'bp' && !link.trim()) {
+      setErrorMessage('Please enter the SFS Sharing Link.');
       return;
     }
 
@@ -167,7 +163,7 @@ export const SFSUploadBlueprintPage: React.FC = () => {
         formData.append('images', file);
       });
       formData.append('zip_file', zipFile);
-      if (link.trim()) {
+      if (type === 'bp' && link.trim()) {
         formData.append('sfs_link', link.trim());
       }
 
@@ -302,21 +298,21 @@ export const SFSUploadBlueprintPage: React.FC = () => {
                   fontWeight: 600,
                   padding: '2px 8px',
                   borderRadius: '12px',
-                  background: selectedCategories.length >= 2 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
-                  color: selectedCategories.length >= 2 ? '#22c55e' : '#eab308',
+                  background: selectedCategories.length >= 1 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(234, 179, 8, 0.15)',
+                  color: selectedCategories.length >= 1 ? '#22c55e' : '#eab308',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '4px'
                 }}
               >
-                {selectedCategories.length >= 2
-                  ? `✓ ${selectedCategories.length} chips selected`
-                  : `Please select above 2 chips (${selectedCategories.length}/2)`}
+                {selectedCategories.length >= 1
+                  ? `✓ ${selectedCategories.length} chip${selectedCategories.length > 1 ? 's' : ''} selected`
+                  : `Please select at least 1 chip (0/1)`}
               </span>
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-              Click category chips to toggle selection. You must select <strong>above two chips</strong> (at least 2 categories).
+              Click category chips to toggle selection. You must select at least 1 category chip.
             </p>
 
             {loadingCats ? (
@@ -357,14 +353,14 @@ export const SFSUploadBlueprintPage: React.FC = () => {
               </div>
             )}
 
-            {selectedCategories.length < 2 && (
+            {selectedCategories.length < 1 && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#eab308', marginTop: '6px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                Need to select at least 2 category chips before submitting.
+                Need to select at least 1 category chip before submitting.
               </span>
             )}
           </div>
@@ -549,28 +545,27 @@ export const SFSUploadBlueprintPage: React.FC = () => {
               </div>
             )}
             <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-              Upload SFS Blueprint .bp or custom mod zip package
+              Upload SFS Blueprint .bp or custom mod zip package (Admin limit: up to 1 GB)
             </span>
           </div>
 
-          {/* SFS Sharing Link (Optional) */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="link">
-              SFS Sharing Link <span style={{ color: 'var(--text-muted)', fontSize: '0.85em', fontWeight: 'normal' }}>(Optional)</span>
-            </label>
-            <input
-              type="url"
-              id="link"
-              className="form-input"
-              placeholder={
-                type === 'mod'
-                  ? 'https://github.com/... or forum thread link (Optional)'
-                  : 'https://sharing.spaceflightsimulator.app/rocket/... (Optional)'
-              }
-              value={link}
-              onChange={e => setLink(e.target.value)}
-            />
-          </div>
+          {/* SFS Sharing Link - ONLY for Blueprints (Mandatory). Removed for Planet & World and Mod. */}
+          {type === 'bp' && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="link">
+                SFS Sharing Link <span className="star">*</span>
+              </label>
+              <input
+                type="url"
+                id="link"
+                className="form-input"
+                placeholder="https://sharing.spaceflightsimulator.app/rocket/..."
+                value={link}
+                onChange={e => setLink(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {/* Buttons */}
           <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit2, Trash2, ExternalLink, Filter, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { initialBlueprints } from '../../data/mockData';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Blueprint } from '../../types';
 import { api } from '../../services/api';
 import { getSfsImageUrl } from '../../utils/cdn';
@@ -22,7 +22,7 @@ export const SFSBlueprintsPage: React.FC<SFSBlueprintsPageProps> = ({
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchBlueprints = async (page = currentPage) => {
     setLoading(true);
@@ -162,10 +162,16 @@ export const SFSBlueprintsPage: React.FC<SFSBlueprintsPageProps> = ({
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={filterType === 'blueprint' ? 7 : 6} style={{ textAlign: 'center', padding: '3rem' }}>
+                    <LoadingSpinner message={`Retrieving ${pageTitle.toLowerCase()} from database...`} />
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={filterType === 'blueprint' ? 7 : 6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                    No {filterType === 'planet' ? 'planets' : filterType === 'mod' ? 'mods' : 'blueprints'} found matching your filter criteria.
+                    No {filterType === 'planet' ? 'planets' : filterType === 'mod' ? 'mods' : 'blueprints'} found in database.
                   </td>
                 </tr>
               ) : (
