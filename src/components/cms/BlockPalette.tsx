@@ -6,11 +6,9 @@ import {
   CheckCircle,
   XCircle,
   BookMarked,
-  LayoutGrid,
   Video,
   Table as TableIcon,
   Sparkles,
-  Layers,
   Heading,
   Quote
 } from 'lucide-react';
@@ -19,7 +17,6 @@ interface BlockPaletteProps {
   onInsertHtml: (htmlSnippet: string) => void;
   onOpenCodeModal: () => void;
   onOpenYouTubeModal: () => void;
-  onOpenTopicCardsModal: () => void;
   onOpenDefinitionModal: () => void;
   onOpenMediaModal: () => void;
 }
@@ -28,7 +25,6 @@ export const BlockPalette: React.FC<BlockPaletteProps> = ({
   onInsertHtml,
   onOpenCodeModal,
   onOpenYouTubeModal,
-  onOpenTopicCardsModal,
   onOpenDefinitionModal,
   onOpenMediaModal,
 }) => {
@@ -137,18 +133,6 @@ export const BlockPalette: React.FC<BlockPaletteProps> = ({
         >
           <Video size={20} color="#f43f5e" />
           <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>YouTube Video</span>
-        </button>
-
-        {/* 32 Topic Cards */}
-        <button
-          type="button"
-          onClick={onOpenTopicCardsModal}
-          className="btn btn-secondary"
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '14px 8px', gap: '8px', textAlign: 'center', height: '86px' }}
-          title="Insert Responsive Multiple Topic Cards Grid"
-        >
-          <LayoutGrid size={20} color="#a855f7" />
-          <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>Topic Cards</span>
         </button>
 
         {/* Definition Box */}

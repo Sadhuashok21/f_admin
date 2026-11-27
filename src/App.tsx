@@ -33,8 +33,8 @@ import { SkiltrixLanguagesPage } from './pages/skiltrix/SkiltrixLanguagesPage';
 import { SkiltrixUsersPage } from './pages/skiltrix/SkiltrixUsersPage';
 import { SkiltrixSubmissionsPage } from './pages/skiltrix/SkiltrixSubmissionsPage';
 import { SkiltrixCompilerPricingPage } from './pages/skiltrix/SkiltrixCompilerPricingPage';
-import { SkiltrixMocksPage } from './pages/skiltrix/SkiltrixMocksPage';
-import { SkiltrixCompanyBlueprintsPage } from './pages/skiltrix/SkiltrixCompanyBlueprintsPage';
+import { SkiltrixCodingAssessmentsPage } from './pages/skiltrix/SkiltrixCodingAssessmentsPage';
+import { SkiltrixRoadmapsPage } from './pages/skiltrix/SkiltrixRoadmapsPage';
 
 // SkilTrix CMS Course Builder Pages
 import { CmsCoursesListPage } from './pages/skiltrix/cms/CmsCoursesListPage';
@@ -110,12 +110,8 @@ export const App: React.FC = () => {
               <Route path="/skiltrix/users" element={<SkiltrixUsersPage />} />
               <Route path="/skiltrix/submissions" element={<SkiltrixSubmissionsPage />} />
               <Route path="/skiltrix/compiler-pricing" element={<SkiltrixCompilerPricingPage />} />
-              <Route path="/skiltrix/mocks" element={<SkiltrixMocksPage />} />
-              <Route path="/skiltrix/assessments" element={<SkiltrixMocksPage />} />
-              <Route path="/skiltrix/companyblueprint" element={<SkiltrixCompanyBlueprintsPage />} />
-              <Route path="/skiltrix/companyblueprint/*" element={<SkiltrixCompanyBlueprintsPage />} />
-              <Route path="/skiltrix/companyblueprints" element={<SkiltrixCompanyBlueprintsPage />} />
-              <Route path="/skiltrix/blueprints" element={<SkiltrixCompanyBlueprintsPage />} />
+              <Route path="/skiltrix/coding-assessments" element={<SkiltrixCodingAssessmentsPage />} />
+              <Route path="/skiltrix/roadmaps" element={<SkiltrixRoadmapsPage />} />
 
               {/* SkilTrix CMS Course Builder Routes */}
               <Route path="/skiltrix/cms" element={<CmsCoursesListPage />} />

@@ -64,45 +64,35 @@ export const YouTubeModal: React.FC<YouTubeModalProps> = ({
     if (embedMode === 'iframe' && youtubeId) {
       // Direct responsive iframe player
       htmlSnippet = `
-        <div class="cms-video-embed" style="position: relative; width: 100%; padding-top: 56.25%; margin: 28px 0; border-radius: 12px; overflow: hidden; background: #000000; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
+        <div class="cms-video-embed" style="position: relative; width: 100%; aspect-ratio: 16 / 9; min-height: 320px; margin: 24px 0; border-radius: 12px; overflow: hidden; background: #000000; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);">
           <iframe
             src="https://www.youtube-nocookie.com/embed/${youtubeId}"
             title="${(title || 'Video Player').replace(/"/g, '&quot;')}"
-            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+            style="width: 100%; height: 100%; min-height: 320px; border: none; display: block;"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen
           ></iframe>
         </div>
       `.trim();
     } else {
-      // Interactive Click-to-Play Video Card
+      // Clean CKEditor-compatible Video Card (avoids block elements inside <a>)
+      const safeTitle = (title || 'Watch Video Lecture').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const safeAlt = (title || 'Watch Video Lecture').replace(/"/g, '&quot;');
       htmlSnippet = `
-        <div class="cms-youtube-card" style="margin: 28px 0; border-radius: 12px; overflow: hidden; background: #070b13; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
-          <a href="${videoUrl.trim()}" target="${targetAttr}" rel="${relAttr}" style="display: block; position: relative; text-decoration: none; overflow: hidden;">
-            <div style="position: relative; padding-top: 56.25%; width: 100%; background: #020617;">
-              <img
-                src="${activeThumbnail}"
-                alt="${(title || 'Watch Video Lecture').replace(/"/g, '&quot;')}"
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
-              />
-              <!-- Play Button Overlay -->
-              <div style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.38); display: flex; align-items: center; justify-content: center; transition: background 0.2s ease;">
-                <div style="width: 64px; height: 64px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(239, 68, 68, 0.65);">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff" style="margin-left: 3px;">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                </div>
-              </div>
-            </div>
-            ${title ? `
-              <div style="padding: 12px 18px; background: #0f172a; border-top: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 600; font-size: 14px; color: #f8fafc;">${title}</span>
-                <span style="font-size: 12px; color: #38bdf8; display: flex; align-items: center; gap: 4px;">
-                  Watch on YouTube &rarr;
-                </span>
-              </div>
-            ` : ''}
+        <div class="cms-youtube-card" style="margin: 24px 0; border-radius: 12px; overflow: hidden; background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);">
+          <a href="${videoUrl.trim()}" target="${targetAttr}" rel="${relAttr}">
+            <img
+              src="${activeThumbnail}"
+              alt="${safeAlt}"
+              style="display: block; width: 100%; max-height: 420px; object-fit: cover;"
+            />
           </a>
+          <div class="cms-youtube-caption" style="padding: 12px 18px; background: #0f172a; border-top: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <span style="font-weight: 600; font-size: 14px; color: #f8fafc;">${safeTitle}</span>
+            <a href="${videoUrl.trim()}" target="${targetAttr}" rel="${relAttr}" style="font-size: 12px; font-weight: 600; color: #38bdf8; text-decoration: none; white-space: nowrap;">
+              Watch on YouTube &rarr;
+            </a>
+          </div>
         </div>
       `.trim();
     }

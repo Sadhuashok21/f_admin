@@ -13,7 +13,7 @@ export const SFSUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await api.getUsers({ limit: 100 });
+      const data = await api.getUsers({ app: 'sfs', limit: 100 });
       setUsers(data || []);
     } catch {
       setUsers([]);

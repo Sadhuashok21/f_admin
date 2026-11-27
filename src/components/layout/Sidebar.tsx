@@ -27,14 +27,13 @@ import {
   Activity,
   FileCheck,
   BadgeIndianRupee,
-  Layers,
-  Award,
   FileText,
   FilePlus,
   Image as ImageIcon,
   Clock,
   CheckCircle2,
   PenTool,
+  Compass,
   ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -301,15 +300,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/skiltrix/mocks" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
-              <Award size={18} />
-              <span className="sidebar_icons_name">Company Mocks</span>
+            <NavLink to="/skiltrix/coding-assessments" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <FileCheck size={18} />
+              <span className="sidebar_icons_name">Coding Assessments</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/skiltrix/companyblueprint" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
-              <Layers size={18} />
-              <span className="sidebar_icons_name">Company Blueprints</span>
+            <NavLink to="/skiltrix/roadmaps" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
+              <Compass size={18} />
+              <span className="sidebar_icons_name">Career Roadmaps</span>
             </NavLink>
           </li>
           <li>
@@ -434,13 +433,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onCloseMobile }) =>
           <NavLink to="/skiltrix" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
             <GraduationCap size={18} />
             <span className="sidebar_icons_name">SkilTrix</span>
-          </NavLink>
-        </li>
-
-        <li>
-          <NavLink to="/skiltrix/cms/courses" className={({ isActive }) => `sidebar_item ${isActive ? 'active' : ''}`} onClick={handleItemClick}>
-            <PenTool size={18} />
-            <span className="sidebar_icons_name">CMS Page Builder</span>
           </NavLink>
         </li>
 

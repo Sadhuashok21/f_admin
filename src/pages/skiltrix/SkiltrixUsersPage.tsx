@@ -12,7 +12,7 @@ export const SkiltrixUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await api.getUsers({ limit: 100 });
+      const data = await api.getUsers({ app: 'skiltrix', limit: 100 });
       setUsers(data || []);
     } catch {
       setUsers([]);
@@ -111,8 +111,8 @@ export const SkiltrixUsersPage: React.FC = () => {
                       <td>
                         <span style={{ fontWeight: 500, fontSize: '0.85rem' }}>{u.type || 'Student'}</span>
                       </td>
-                      <td style={{ textAlign: 'center', fontWeight: 600 }}>{u.uploads ? u.uploads * 2 : 1}</td>
-                      <td style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{u.platform_name || u.platform || 'Web'}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 600 }}>{u.completed_courses ?? 0}</td>
+                      <td style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{u.platform_name || u.platform || 'skiltrix'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <span className={`badge badge-${u.status || 'approved'}`}>{u.status || 'approved'}</span>
                       </td>

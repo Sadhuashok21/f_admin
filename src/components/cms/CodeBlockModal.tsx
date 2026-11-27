@@ -43,24 +43,23 @@ export const CodeBlockModal: React.FC<CodeBlockModalProps> = ({ isOpen, onClose,
       `
       : '';
 
+    const safeTitle = (title || language.toUpperCase()).replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const htmlSnippet = `
       <div class="cms-code-block" data-lang="${language}" style="margin: 24px 0; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #334155; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
         <div class="code-header" style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 10px 16px; border-bottom: 1px solid #334155;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-weight: 600; font-size: 13px; color: #f1f5f9;">${title || language.toUpperCase()}</span>
+            <span style="font-weight: 600; font-size: 13px; color: #f1f5f9;">${safeTitle}</span>
             <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; text-transform: uppercase; font-weight: 700;">${language}</span>
           </div>
-          <button type="button" class="copy-code-btn" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(code.trim())}')); const el=this; el.innerText='Copied!'; setTimeout(()=>el.innerText='Copy', 2000);" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; font-size: 12px; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
-            Copy
-          </button>
+          <span class="copy-code-btn" role="button" tabindex="0" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; user-select: none;">Copy</span>
         </div>
-        <div style="display: flex; padding: 16px; font-family: monospace; font-size: 14px; line-height: 1.6; color: #e2e8f0; overflow-x: auto;">
+        <div class="code-body" style="display: flex; align-items: flex-start; padding: 16px; font-family: monospace; font-size: 14px; line-height: 1.6; color: #e2e8f0; overflow-x: auto; background: #0f172a;">
           ${lineNumbersHtml}
-          <pre style="margin: 0; white-space: pre;"><code>${escapedCode}</code></pre>
+          <pre style="margin: 0; padding: 0; white-space: pre; flex: 1; background: transparent; border: none; color: #e2e8f0;"><code class="language-${language}" style="background: transparent; color: #e2e8f0; padding: 0;">${escapedCode}</code></pre>
         </div>
         ${outputBlock}
       </div>
-    `;
+    `.trim();
 
     onInsert(htmlSnippet);
     onClose();

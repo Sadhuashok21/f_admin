@@ -18,7 +18,6 @@ import {
   Copy,
   Check,
   ChevronDown,
-  Layers,
   FolderTree,
   Sun,
   Moon,
@@ -26,7 +25,8 @@ import {
   AlertTriangle,
   Table as TableIcon,
   BookOpen,
-  FileText
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 import { cmsApi } from '../../../services/cmsApi';
 import { CmsCourse, CmsPage } from '../../../types/cms';
@@ -34,7 +34,6 @@ import { CKEditorWrapper } from '../../../components/cms/CKEditorWrapper';
 import { LivePreviewFrame } from '../../../components/cms/LivePreviewFrame';
 import { CodeBlockModal } from '../../../components/cms/CodeBlockModal';
 import { YouTubeModal } from '../../../components/cms/YouTubeModal';
-import { TopicCardsModal } from '../../../components/cms/TopicCardsModal';
 import { DefinitionBoxModal } from '../../../components/cms/DefinitionBoxModal';
 import { MediaPickerModal } from '../../../components/cms/MediaPickerModal';
 import { Modal } from '../../../components/common/Modal';
@@ -94,11 +93,11 @@ export const CmsPageBuilderPage: React.FC = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isBlockMenuOpen, setIsBlockMenuOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedPageUrl, setCopiedPageUrl] = useState(false);
 
   // Educational Block Modals
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
-  const [topicModalOpen, setTopicModalOpen] = useState(false);
   const [definitionModalOpen, setDefinitionModalOpen] = useState(false);
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
 
@@ -107,6 +106,13 @@ export const CmsPageBuilderPage: React.FC = () => {
 
   // CKEditor reference
   const editorRef = useRef<any>(null);
+  const slugManuallyEditedRef = useRef(false);
+
+  const toSlug = (val: string) =>
+    val
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
   // Load courses and initial page details
   useEffect(() => {
@@ -132,6 +138,9 @@ export const CmsPageBuilderPage: React.FC = () => {
           setPage(p);
           setTitle(p.title);
           setSlug(p.slug);
+          slugManuallyEditedRef.current = Boolean(
+            p.slug && p.slug !== 'untitled-page' && p.slug !== toSlug(p.title || '')
+          );
           setSelectedCourseId(p.course_id);
           setParentId(p.parent_id || null);
           setPageOrder(p.page_order);
@@ -153,7 +162,8 @@ export const CmsPageBuilderPage: React.FC = () => {
           if (mounted) setLoading(false);
         });
     } else {
-      setTitle('Untitled Page');
+      slugManuallyEditedRef.current = false;
+      setTitle('');
       setSlug('');
       setContentHtml(
         `<h2>Welcome to Course Page</h2><p>Start writing your educational content, or insert code blocks, tables, and callouts from the top toolbar.</p>`
@@ -177,16 +187,12 @@ export const CmsPageBuilderPage: React.FC = () => {
       .catch((err) => console.error('Failed to load siblings:', err));
   }, [selectedCourseId, pageId]);
 
-  // Auto-slug generator
-  useEffect(() => {
-    if ((!slug || !pageId || pageId === 'create') && title) {
-      const generated = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      setSlug(generated);
+  const handleTitleChange = (nextTitle: string) => {
+    setTitle(nextTitle);
+    if (!slugManuallyEditedRef.current || !slug || slug === 'untitled-page') {
+      setSlug(toSlug(nextTitle));
     }
-  }, [title]);
+  };
 
   // Handle Switch to Code (Normal -> Code)
   const handleSwitchToCode = () => {
@@ -205,28 +211,80 @@ export const CmsPageBuilderPage: React.FC = () => {
     }
   };
 
-  // Insert HTML at Cursor / Append
+  // Insert HTML at Cursor / Append (always top-level with trailing paragraph so cursor never gets trapped inside video/card blocks)
   const insertHtmlSnippet = (html: string) => {
     if (editorMode === 'normal') {
       if (editorRef.current) {
+        const editor = editorRef.current;
         try {
-          editorRef.current.model.change(() => {
-            const viewFragment = editorRef.current.data.processor.toView(html);
-            const modelFragment = editorRef.current.data.toModel(viewFragment);
-            editorRef.current.model.insertContent(modelFragment);
+          editor.model.change((writer: any) => {
+            const root = editor.model.document.getRoot();
+            const sel = editor.model.document.selection;
+
+            let anchorNode: any = sel.getFirstPosition()?.parent;
+            while (anchorNode && anchorNode.parent && anchorNode.parent !== root) {
+              anchorNode = anchorNode.parent;
+            }
+
+            const viewFragment = editor.data.processor.toView(html);
+            const modelFragment = editor.data.toModel(viewFragment);
+
+            const isEmptyPara =
+              anchorNode &&
+              anchorNode.parent === root &&
+              anchorNode.is('element', 'paragraph') &&
+              anchorNode.isEmpty;
+
+            const insertPos =
+              anchorNode && anchorNode.parent === root
+                ? isEmptyPara
+                  ? writer.createPositionBefore(anchorNode)
+                  : writer.createPositionAfter(anchorNode)
+                : writer.createPositionAt(root, 'end');
+
+            const insertedRange = editor.model.insertContent(modelFragment, insertPos);
+            if (isEmptyPara && anchorNode.parent) {
+              writer.remove(anchorNode);
+            }
+
+            let topAfterBlock: any = insertedRange?.end?.parent;
+            while (topAfterBlock && topAfterBlock.parent && topAfterBlock.parent !== root) {
+              topAfterBlock = topAfterBlock.parent;
+            }
+
+            const trailingParagraph = writer.createElement('paragraph');
+            if (topAfterBlock && topAfterBlock.parent === root) {
+              writer.insert(trailingParagraph, writer.createPositionAfter(topAfterBlock));
+            } else {
+              writer.insert(trailingParagraph, writer.createPositionAt(root, 'end'));
+            }
+
+            if (
+              root.childCount > 0 &&
+              root.getChild(0).name !== 'paragraph' &&
+              !String(root.getChild(0).name).startsWith('heading')
+            ) {
+              writer.insert(writer.createElement('paragraph'), writer.createPositionAt(root, 0));
+            }
+
+            for (const attr of Array.from(editor.model.document.selection.getAttributeKeys())) {
+              writer.removeSelectionAttribute(attr);
+            }
+            writer.setSelection(trailingParagraph, 0);
           });
-          setContentHtml(editorRef.current.getData());
+          editor.editing.view.focus();
+          setContentHtml(editor.getData());
         } catch {
-          const currentData = editorRef.current.getData();
-          const updated = currentData ? `${currentData}\n${html}` : html;
-          editorRef.current.setData(updated);
+          const currentData = editor.getData();
+          const updated = currentData ? `${currentData}\n${html}\n<p>&nbsp;</p>` : `${html}\n<p>&nbsp;</p>`;
+          editor.setData(updated);
           setContentHtml(updated);
         }
       } else {
-        setContentHtml((prev) => (prev ? `${prev}\n${html}` : html));
+        setContentHtml((prev) => (prev ? `${prev}\n${html}\n<p>&nbsp;</p>` : `${html}\n<p>&nbsp;</p>`));
       }
     } else {
-      setContentHtml((prev) => (prev ? `${prev}\n\n${html}` : html));
+      setContentHtml((prev) => (prev ? `${prev}\n\n${html}\n<p></p>` : `${html}\n<p></p>`));
     }
     setIsBlockMenuOpen(false);
   };
@@ -293,10 +351,11 @@ export const CmsPageBuilderPage: React.FC = () => {
 
     setSaving(true);
     try {
+      const resolvedSlug = (slug.trim() || toSlug(title.trim()) || 'page');
       const metadataPayload: Partial<CmsPage> = {
         course_id: selectedCourseId,
         title: title.trim(),
-        slug: slug.trim() || 'untitled-page',
+        slug: resolvedSlug,
         parent_id: parentId || null,
         page_order: pageOrder,
         status: 'draft',
@@ -373,10 +432,11 @@ export const CmsPageBuilderPage: React.FC = () => {
         navigate(`/skiltrix/cms/pages/${created.page_id}`, { replace: true });
       }
 
+      const resolvedSlug = (slug.trim() || toSlug(title.trim()) || 'page');
       await cmsApi.updatePageMetadata(activeId, {
         course_id: selectedCourseId,
         title: title.trim(),
-        slug: slug.trim(),
+        slug: resolvedSlug,
         parent_id: parentId,
         page_order: pageOrder,
         seo_title: seoTitle,
@@ -388,6 +448,7 @@ export const CmsPageBuilderPage: React.FC = () => {
         custom_css: customCss,
         custom_js: customJs,
         title: title.trim(),
+        slug: resolvedSlug,
         seo_title: seoTitle,
         seo_description: seoDescription,
         video_url: videoUrl,
@@ -398,6 +459,9 @@ export const CmsPageBuilderPage: React.FC = () => {
         next_page_id: nextPageId
       });
 
+      if (pubRes.slug) {
+        setSlug(pubRes.slug);
+      }
       setStatus('published');
       setLastSaved(new Date().toLocaleTimeString());
       setSaveMessage(`Page compiled & published live to ${pubRes.url_path}!`);
@@ -452,6 +516,18 @@ export const CmsPageBuilderPage: React.FC = () => {
   };
 
   const currentCourse = courses.find((c) => c.course_id === selectedCourseId);
+  const resolvedPageSlug = slug.trim() || toSlug(title.trim()) || 'page';
+  const parentUrlBase = (
+    siblingPages.find((sp) => sp.page_id === parentId)?.url_path ||
+    `/courses/${currentCourse?.slug || 'course'}/`
+  ).replace(/\/$/, '');
+  const computedPagePath = `${parentUrlBase}/${resolvedPageSlug}/`;
+  const skiltrixBaseHost =
+    import.meta.env.VITE_FRONTEND_URL ||
+    (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:8443'
+      : 'https://skiltrix.ascentracoresolutions.com');
+  const fullLivePageUrl = `${skiltrixBaseHost}${computedPagePath}`;
 
   if (loading) {
     return (
@@ -491,8 +567,8 @@ export const CmsPageBuilderPage: React.FC = () => {
             type="text"
             className="blogger-title-input"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Page Title (e.g. Introduction to Cyber Security)"
           />
         </div>
 
@@ -658,20 +734,6 @@ export const CmsPageBuilderPage: React.FC = () => {
                 >
                   <Video size={15} color="#ef4444" />
                   <span>YouTube Video Card</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTopicModalOpen(true);
-                    setIsBlockMenuOpen(false);
-                  }}
-                  style={{ width: '100%', padding: '8px 14px', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', textAlign: 'left' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#1e293b')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <Layers size={15} color="#c084fc" />
-                  <span>Topic Cards Grid</span>
                 </button>
 
                 <button
@@ -859,14 +921,30 @@ export const CmsPageBuilderPage: React.FC = () => {
                 flexDirection: 'column'
               }}
             >
-              <CKEditorWrapper
-                value={contentHtml}
-                onChange={(data) => setContentHtml(data)}
-                onReady={(editor) => {
-                  editorRef.current = editor;
-                }}
-                canvasTheme={canvasTheme}
-              />
+              {loading ? (
+                <div style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted, #94a3b8)',
+                  fontSize: '0.9rem',
+                  gap: '8px'
+                }}>
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  Loading content…
+                </div>
+              ) : (
+                <CKEditorWrapper
+                  key={`editor-${pageId ?? 'create'}`}
+                  value={contentHtml}
+                  onChange={(data) => setContentHtml(data)}
+                  onReady={(editor) => {
+                    editorRef.current = editor;
+                  }}
+                  canvasTheme={canvasTheme}
+                />
+              )}
             </div>
 
             {/* ── Code / HTML Mode: Raw HTML Source Editor ─────────────────────── */}
@@ -1020,18 +1098,112 @@ export const CmsPageBuilderPage: React.FC = () => {
 
             {/* URL Slug */}
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>
-                URL Slug
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                  URL Slug
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    slugManuallyEditedRef.current = false;
+                    setSlug(toSlug(title));
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#38bdf8',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  Sync from title
+                </button>
+              </div>
               <input
                 type="text"
                 value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                placeholder="e.g. integer-variables"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  slugManuallyEditedRef.current = Boolean(val.trim());
+                  setSlug(val);
+                }}
+                placeholder="e.g. introduction-to-cyber-security"
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', background: '#030712', border: '1px solid #1e293b', color: '#f8fafc', fontSize: '13px' }}
               />
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                Path: /courses/{currentCourse?.slug || 'course'}/{slug || 'page'}
+                Path: {computedPagePath}
+              </div>
+            </div>
+
+            {/* Direct Page Link & Preview URL */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>
+                Page Link
+              </label>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#030712',
+                border: '1px solid #1e293b',
+                borderRadius: '6px',
+                padding: '6px 8px'
+              }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={fullLivePageUrl}
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#38bdf8',
+                    fontSize: '11.5px',
+                    fontFamily: 'monospace',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(fullLivePageUrl);
+                    setCopiedPageUrl(true);
+                    setTimeout(() => setCopiedPageUrl(false), 1800);
+                  }}
+                  title="Copy page link"
+                  style={{
+                    background: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '4px',
+                    color: copiedPageUrl ? '#34d399' : '#cbd5e1',
+                    padding: '4px 6px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  {copiedPageUrl ? <Check size={13} /> : <Copy size={13} />}
+                </button>
+                <a
+                  href={fullLivePageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Open page on SkilTrix"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.14)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '4px',
+                    color: '#34d399',
+                    padding: '4px 6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    textDecoration: 'none'
+                  }}
+                >
+                  <ExternalLink size={13} />
+                </a>
               </div>
             </div>
 
@@ -1047,6 +1219,44 @@ export const CmsPageBuilderPage: React.FC = () => {
                 onChange={(e) => setPageOrder(parseInt(e.target.value) || 1)}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', background: '#030712', border: '1px solid #1e293b', color: '#f8fafc', fontSize: '13px' }}
               />
+            </div>
+
+            {/* Previous Topic Link */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>
+                Previous Topic Link
+              </label>
+              <select
+                value={prevPageId || ''}
+                onChange={(e) => setPrevPageId(e.target.value || null)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', background: '#030712', border: '1px solid #1e293b', color: '#f8fafc', fontSize: '13px' }}
+              >
+                <option value="">(Auto / None)</option>
+                {siblingPages.map((sp) => (
+                  <option key={sp.page_id} value={sp.page_id}>
+                    {sp.title} ({sp.url_path})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Next Topic Link */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>
+                Next Topic Link
+              </label>
+              <select
+                value={nextPageId || ''}
+                onChange={(e) => setNextPageId(e.target.value || null)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', background: '#030712', border: '1px solid #1e293b', color: '#f8fafc', fontSize: '13px' }}
+              >
+                <option value="">(Auto / None)</option>
+                {siblingPages.map((sp) => (
+                  <option key={sp.page_id} value={sp.page_id}>
+                    {sp.title} ({sp.url_path})
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Scoped Custom CSS */}
@@ -1147,12 +1357,6 @@ export const CmsPageBuilderPage: React.FC = () => {
           setYoutubeModalOpen(false);
           setMediaModalOpen(true);
         }}
-      />
-
-      <TopicCardsModal
-        isOpen={topicModalOpen}
-        onClose={() => setTopicModalOpen(false)}
-        onInsert={(cardsHtml) => insertHtmlSnippet(cardsHtml)}
       />
 
       <DefinitionBoxModal
