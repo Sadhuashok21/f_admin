@@ -6,6 +6,8 @@ export interface CmsCourse {
   description: string;
   category: string;
   icon: string;
+  image?: string;
+  image_url?: string;
   status: 'draft' | 'published' | 'archived';
   order: number;
   pages_count?: number;

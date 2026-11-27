@@ -47,7 +47,7 @@ export function getSfsZipUrl(filename?: string, fallback = ''): string {
 
 export function getStImageUrl(filename?: string, fallback = ''): string {
   if (!filename) return fallback;
-  if (/^https?:\/\//i.test(filename)) {
+  if (/^(https?:\/\/|\/media\/|\/assets\/|data:)/i.test(filename)) {
     return filename;
   }
   const clean = filename.replace(/^\/+/, '');

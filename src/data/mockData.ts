@@ -14,9 +14,7 @@ import {
   Movie,
   Song,
   BankAccount,
-  Submission,
-  CompanyMockItem,
-  CompanyBlueprintItem
+  Submission
 } from '../types';
 
 export const initialUsers: User[] = [];
@@ -35,5 +33,3 @@ export const initialDatabaseTables: Record<string, TableInfo[]> = {};
 export const initialMovies: Movie[] = [];
 export const initialSongs: Song[] = [];
 export const initialBankAccounts: BankAccount[] = [];
-export const initialCompanyMocks: CompanyMockItem[] = [];
-export const initialCompanyBlueprints: CompanyBlueprintItem[] = [];

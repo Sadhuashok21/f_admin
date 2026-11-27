@@ -92,7 +92,11 @@ export const CmsPagesListPage: React.FC<CmsPagesListPageProps> = ({
   };
 
   // Get frontend domain for live preview links
-  const frontendHost = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5176';
+  const frontendHost =
+    import.meta.env.VITE_FRONTEND_URL ||
+    (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:8443'
+      : 'https://skiltrix.ascentracoresolutions.com');
 
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto', color: 'var(--text-main, #f1f5f9)' }}>

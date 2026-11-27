@@ -12,9 +12,14 @@ import {
   RefreshCw,
   CheckCircle2,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Image as ImageIcon,
+  Upload,
+  X
 } from 'lucide-react';
 import { cmsApi } from '../../../services/cmsApi';
+import { api } from '../../../services/api';
+import { getStImageUrl } from '../../../utils/cdn';
 import { CmsCourse } from '../../../types/cms';
 
 export const CmsCoursesListPage: React.FC = () => {
@@ -30,6 +35,9 @@ export const CmsCoursesListPage: React.FC = () => {
   const [formSlug, setFormSlug] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('Programming');
+  const [formImage, setFormImage] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [formStatus, setFormStatus] = useState<'draft' | 'published' | 'archived'>('published');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -56,6 +64,9 @@ export const CmsCoursesListPage: React.FC = () => {
     setFormSlug('');
     setFormDescription('');
     setFormCategory('Programming');
+    setFormImage('');
+    setImageUploading(false);
+    setUploadProgress(0);
     setFormStatus('published');
     setErrorMsg('');
     setModalOpen(true);
@@ -67,9 +78,32 @@ export const CmsCoursesListPage: React.FC = () => {
     setFormSlug(c.slug);
     setFormDescription(c.description || '');
     setFormCategory(c.category || 'Programming');
+    setFormImage(c.image || '');
+    setImageUploading(false);
+    setUploadProgress(0);
     setFormStatus(c.status);
     setErrorMsg('');
     setModalOpen(true);
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    setUploadProgress(10);
+    setErrorMsg('');
+    try {
+      const uploadRes = await api.uploadCdnAsset(file, 'st_image', (pct) => {
+        setUploadProgress(Math.max(15, Math.min(95, pct)));
+      });
+      setFormImage(uploadRes.url || uploadRes.filename);
+      setUploadProgress(100);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to upload course image');
+    } finally {
+      setImageUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleTitleChange = (val: string) => {
@@ -99,6 +133,7 @@ export const CmsCoursesListPage: React.FC = () => {
           slug: formSlug.trim(),
           description: formDescription.trim(),
           category: formCategory.trim(),
+          image: formImage.trim(),
           status: formStatus
         });
       } else {
@@ -107,6 +142,7 @@ export const CmsCoursesListPage: React.FC = () => {
           slug: formSlug.trim(),
           description: formDescription.trim(),
           category: formCategory.trim(),
+          image: formImage.trim(),
           status: formStatus
         });
       }
@@ -302,6 +338,32 @@ export const CmsCoursesListPage: React.FC = () => {
               }}
             >
               <div>
+                <div style={{
+                  width: '100%',
+                  height: '140px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  marginBottom: '12px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                  border: '1px solid rgba(51, 65, 85, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {(c.image_url || c.image) ? (
+                    <img
+                      src={c.image_url || getStImageUrl(c.image)}
+                      alt={c.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.78rem' }}>
+                      <ImageIcon size={24} />
+                      <span>No cover image</span>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <span style={{
                     fontSize: '0.75rem',
@@ -497,7 +559,9 @@ export const CmsCoursesListPage: React.FC = () => {
             borderRadius: '12px',
             border: '1px solid var(--border-color, #334155)',
             width: '100%',
-            maxWidth: '520px',
+            maxWidth: '540px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             padding: '1.5rem',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
           }}>
@@ -625,6 +689,95 @@ export const CmsCoursesListPage: React.FC = () => {
                 />
               </div>
 
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '6px' }}>
+                  Course Cover Image
+                </label>
+                {formImage.trim() && (
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '140px',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    marginBottom: '8px',
+                    border: '1px solid var(--border-color, #334155)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)'
+                  }}>
+                    <img
+                      src={getStImageUrl(formImage.trim())}
+                      alt="Course cover preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormImage('')}
+                      title="Remove image"
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '999px',
+                        border: 'none',
+                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                        color: '#f87171',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0.55rem 0.9rem',
+                    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+                    border: '1px solid rgba(99, 102, 241, 0.35)',
+                    color: '#c7d2fe',
+                    borderRadius: '6px',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: imageUploading ? 'not-allowed' : 'pointer'
+                  }}>
+                    <Upload size={14} />
+                    <span>{imageUploading ? `Uploading (${uploadProgress}%)...` : 'Upload Image'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={imageUploading}
+                      onChange={handleImageFileChange}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Or paste CDN image URL / filename..."
+                    value={formImage}
+                    onChange={e => setFormImage(e.target.value)}
+                    style={{
+                      flex: 1,
+                      minWidth: '200px',
+                      padding: '0.55rem 0.8rem',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid var(--border-color, #334155)',
+                      borderRadius: '6px',
+                      color: 'inherit',
+                      outline: 'none',
+                      fontSize: '0.84rem'
+                    }}
+                  />
+                </div>
+              </div>
+
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '6px' }}>
                   Status
@@ -666,7 +819,7 @@ export const CmsCoursesListPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || imageUploading}
                   style={{
                     padding: '0.6rem 1.3rem',
                     backgroundColor: '#4f46e5',
@@ -674,10 +827,11 @@ export const CmsCoursesListPage: React.FC = () => {
                     borderRadius: '6px',
                     color: '#fff',
                     fontWeight: 600,
-                    cursor: 'pointer'
+                    cursor: (submitting || imageUploading) ? 'not-allowed' : 'pointer',
+                    opacity: (submitting || imageUploading) ? 0.65 : 1
                   }}
                 >
-                  {submitting ? 'Saving...' : editingCourse ? 'Save Changes' : 'Create Course'}
+                  {imageUploading ? 'Uploading Image...' : submitting ? 'Saving...' : editingCourse ? 'Save Changes' : 'Create Course'}
                 </button>
               </div>
             </form>

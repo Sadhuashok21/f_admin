@@ -100,6 +100,7 @@ export const cmsApi = {
     custom_css?: string;
     custom_js?: string;
     title?: string;
+    slug?: string;
     seo_title?: string;
     seo_description?: string;
     video_url?: string;
@@ -108,7 +109,7 @@ export const cmsApi = {
     video_target?: '_blank' | '_self';
     prev_page_id?: string | null;
     next_page_id?: string | null;
-  }): Promise<{ url_path: string; file_path: string }> {
+  }): Promise<{ url_path: string; file_path: string; slug?: string }> {
     const res = await fetch(`${API_BASE}/api/admin/cms/pages/${pageId}/publish/`, {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
@@ -116,7 +117,7 @@ export const cmsApi = {
     });
     const data = await res.json();
     if (!data.status) throw new Error(data.message || 'Publishing failed');
-    return { url_path: data.url_path, file_path: data.file_path };
+    return { url_path: data.url_path, file_path: data.file_path, slug: data.slug };
   },
 
   async deletePage(pageId: string): Promise<boolean> {

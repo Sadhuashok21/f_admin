@@ -10,10 +10,6 @@ import {
   Course,
   Video,
   Submission,
-  CompanyMockItem,
-  CompanyBlueprintItem,
-  QuestionItem,
-  AssessmentSectionItem,
   ContactSubmission,
   ContactMetrics
 } from '../types';
@@ -28,8 +24,29 @@ export interface DashboardAnalyticsPoint {
   errors: number;
 }
 
+async function getCsrfToken(): Promise<string | null> {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie
+    .split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('csrftoken='));
+  if (match) {
+    return decodeURIComponent(match.split('=')[1] || '');
+  }
+  try {
+    const csrfRes = await fetch(`${API_BASE}/apps/skiltrix/api/api/csrf/`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' }
+    });
+    const csrfJson = await csrfRes.json().catch(() => null);
+    return csrfJson?.csrfToken || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Generic fetch wrapper with timeout, JSON parsing, and error safety.
+ * Generic fetch wrapper with timeout, JSON parsing, CSRF support, and error safety.
  */
 async function fetchWithFallback<T>(url: string, options?: RequestInit, fallbackData?: T): Promise<T> {
   try {
@@ -38,11 +55,18 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
 
     const token = typeof window !== 'undefined' ? (localStorage.getItem('as_access_token') || localStorage.getItem('access_token')) : null;
     const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const method = (options?.method || 'GET').toUpperCase();
+    const csrfHeaders: Record<string, string> = {};
+    if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+      const csrfToken = await getCsrfToken();
+      if (csrfToken) csrfHeaders['X-CSRFToken'] = csrfToken;
+    }
 
     const baseHeaders: Record<string, string> = {
       'Accept': 'application/json',
       'X-Admin-Portal': 'true',
       ...authHeaders,
+      ...csrfHeaders,
       ...(options?.headers as Record<string, string> || {})
     };
     if (!(options?.body instanceof FormData)) {
@@ -59,7 +83,14 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
+      let detail = `${res.status}: ${res.statusText}`;
+      try {
+        const errBody = await res.json();
+        if (errBody?.detail || errBody?.message) {
+          detail = errBody.detail || errBody.message;
+        }
+      } catch {}
+      throw new Error(`HTTP error ${detail}`);
     }
 
     if (res.status === 204) {
@@ -70,7 +101,7 @@ async function fetchWithFallback<T>(url: string, options?: RequestInit, fallback
     const data = text ? JSON.parse(text) : {};
     return data as T;
   } catch (err) {
-    console.warn(`[API] Failed to fetch ${url}, using resilient data fallback:`, err);
+    console.warn(`[API] Failed to fetch ${url}:`, err);
     if (fallbackData !== undefined) {
       return fallbackData;
     }
@@ -201,10 +232,12 @@ export const api = {
   /**
    * User Management APIs
    */
-  async getUsers(params?: { search?: string; status?: string; page?: number; limit?: number }) {
+  async getUsers(params?: { search?: string; status?: string; app?: 'skiltrix' | 'sfs' | 'all'; platform?: string; page?: number; limit?: number }) {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
+    if (params?.app && params.app !== 'all') query.append('app', params.app);
+    if (params?.platform) query.append('platform', params.platform);
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
 
@@ -699,10 +732,12 @@ export const api = {
       return result.map(c => ({
         course_id: c.course_id || String(c.id),
         name: c.name || 'Full Stack Engineering',
-        image: c.image ? getStImageUrl(c.image) : getStImageUrl('st/images/course-default.webp'),
+        image: c.image_url || (c.image ? getStImageUrl(c.image) : getStImageUrl('st/images/course-default.webp')),
         type: (c.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         paid: c.is_paid ? 1 : 0,
         price: c.price,
+        compare_price: Number(c.compare_price) || 0,
+        discount_percent: Number(c.discount_percent) || 0,
         description: c.description || 'Comprehensive curriculum with industry hands-on projects',
         status: (c.status || 'active') as 'active' | 'inactive',
         created_at: c.created_at ? c.created_at.split('T')[0] : '2026-10-01'
@@ -711,14 +746,25 @@ export const api = {
     return [];
   },
 
-  async createCourse(data: { name: string; type?: string; price?: number; paid?: 0 | 1; description?: string; image?: string }): Promise<Course> {
+  async createCourse(data: {
+    name: string;
+    type?: string;
+    price?: number;
+    compare_price?: number;
+    discount_percent?: number;
+    paid?: 0 | 1;
+    description?: string;
+    image?: string;
+  }): Promise<Course> {
     const payload = {
       name: data.name,
       type: data.type || 'beginner',
       is_paid: Boolean(data.paid),
       price: data.paid ? Number(data.price || 0) : 0,
+      compare_price: data.paid ? Number(data.compare_price || 0) : 0,
+      discount_percent: data.paid ? Number(data.discount_percent || 0) : 0,
       description: data.description || '',
-      image: (data.image || 'course_thumb.webp').slice(0, 50),
+      image: (data.image || 'course_thumb.webp').trim(),
       status: 'active'
     };
 
@@ -727,35 +773,82 @@ export const api = {
       {
         method: 'POST',
         body: JSON.stringify(payload)
-      },
-      null
+      }
     );
 
     if (res && res.course_id) {
       return {
         course_id: res.course_id,
         name: res.name,
-        image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/course-default.webp'),
+        image: res.image_url || (res.image ? getStImageUrl(res.image) : getStImageUrl(data.image || 'st/images/course-default.webp')),
         type: (res.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         paid: res.is_paid ? 1 : 0,
         price: res.price,
+        compare_price: Number(res.compare_price) || 0,
+        discount_percent: Number(res.discount_percent) || 0,
         description: data.description || '',
         status: res.status || 'active',
         created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
       };
     }
 
-    return {
-      course_id: `crs_${Date.now()}`,
-      name: data.name,
-      image: data.image ? getStImageUrl(data.image) : getStImageUrl('st/images/course-default.webp'),
-      type: (data.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
-      paid: data.paid || 0,
-      price: data.price,
-      description: data.description || '',
-      status: 'active',
-      created_at: new Date().toISOString().split('T')[0]
-    };
+    throw new Error('Failed to create course.');
+  },
+
+  async updateCourse(
+    id: string,
+    data: {
+      name?: string;
+      type?: string;
+      price?: number;
+      compare_price?: number;
+      discount_percent?: number;
+      paid?: 0 | 1;
+      description?: string;
+      image?: string;
+      status?: 'active' | 'inactive';
+    }
+  ): Promise<Course | null> {
+    const payload: Record<string, any> = {};
+    if (data.name !== undefined) payload.name = data.name;
+    if (data.type !== undefined) payload.type = data.type;
+    if (data.paid !== undefined) {
+      payload.is_paid = Boolean(data.paid);
+      payload.price = data.paid ? Number(data.price || 0) : 0;
+      payload.compare_price = data.paid ? Number(data.compare_price || 0) : 0;
+      payload.discount_percent = data.paid ? Number(data.discount_percent || 0) : 0;
+    } else {
+      if (data.price !== undefined) payload.price = Number(data.price || 0);
+      if (data.compare_price !== undefined) payload.compare_price = Number(data.compare_price || 0);
+      if (data.discount_percent !== undefined) payload.discount_percent = Number(data.discount_percent || 0);
+    }
+    if (data.image !== undefined) payload.image = data.image.trim();
+    if (data.status !== undefined) payload.status = data.status;
+
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/courses/${id}/`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (res && res.course_id) {
+      return {
+        course_id: res.course_id,
+        name: res.name,
+        image: res.image_url || (res.image ? getStImageUrl(res.image) : getStImageUrl(data.image || 'st/images/course-default.webp')),
+        type: (res.type || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+        paid: res.is_paid ? 1 : 0,
+        price: res.price,
+        compare_price: Number(res.compare_price) || 0,
+        discount_percent: Number(res.discount_percent) || 0,
+        description: data.description || '',
+        status: res.status || 'active',
+        created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+      };
+    }
+    return null;
   },
 
   async deleteCourse(id: string): Promise<boolean> {
@@ -785,6 +878,11 @@ export const api = {
         course_id: v.course || 'crs_ts_mastery',
         course_name: v.course_name || 'Technical Curriculum',
         description: v.description || '',
+        chapters: Array.isArray(v.chapters) ? v.chapters : [],
+        transcript: Array.isArray(v.transcript) ? v.transcript : [],
+        lesson_notes: v.lesson_notes || '',
+        code_snippet: v.code_snippet || '',
+        code_language: v.code_language || 'python',
         status: (v.status || 'active') as 'active' | 'inactive',
         created_at: v.created_at ? v.created_at.split('T')[0] : '2026-10-01',
         comments_count: v.comments_count || (Array.isArray(v.comments) ? v.comments.length : 0)
@@ -793,13 +891,14 @@ export const api = {
     return [];
   },
 
-  async createVideo(data: { title: string; description?: string; video?: string; image?: string; course_id?: string }): Promise<Video> {
+  async createVideo(data: { title: string; description?: string; video?: string; image?: string; course_id?: string; chapters?: { time: number; title: string }[] }): Promise<Video> {
     const payload = {
       title: data.title,
       description: data.description || '',
       video: data.video || '',
       image: data.image || 'video_thumb.webp',
-      course_id: data.course_id
+      course_id: data.course_id,
+      chapters: data.chapters || []
     };
 
     const res = await fetchWithFallback<any>(
@@ -820,6 +919,7 @@ export const api = {
         course_id: res.course || data.course_id || 'crs_ts_mastery',
         course_name: res.course_name || 'Technical Curriculum',
         description: res.description,
+        chapters: Array.isArray(res.chapters) ? res.chapters : (data.chapters || []),
         status: res.status || 'active',
         created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
         comments_count: 0
@@ -834,9 +934,54 @@ export const api = {
       video_url: data.video ? getStVideoUrl(data.video) : '',
       course_id: data.course_id || 'crs_ts_mastery',
       course_name: 'Technical Curriculum',
+      chapters: data.chapters || [],
       status: 'active',
       created_at: new Date().toISOString().split('T')[0],
       comments_count: 0
+    };
+  },
+
+  async updateVideo(
+    id: string,
+    data: Partial<{
+      title: string;
+      description: string;
+      course_id: string;
+      status: 'active' | 'inactive';
+      chapters: { time: number; title: string }[];
+      transcript: { start: number; end: number; text: string }[];
+      lesson_notes: string;
+      code_snippet: string;
+      code_language: string;
+    }>
+  ): Promise<Video> {
+    const res = await fetchWithFallback<any>(
+      `/apps/skiltrix/api/videos/${id}/`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      null
+    );
+    if (!res) {
+      throw new Error('Failed to update video');
+    }
+    return {
+      video_id: res.video_id || id,
+      title: res.title,
+      image: res.image_url || (res.image ? getStImageUrl(res.image) : getStImageUrl('st/images/video-default.webp')),
+      video_url: res.video_url || (res.video ? getStVideoUrl(res.video) : ''),
+      course_id: res.course || data.course_id || 'crs_ts_mastery',
+      course_name: res.course_name || 'Technical Curriculum',
+      description: res.description || '',
+      chapters: Array.isArray(res.chapters) ? res.chapters : [],
+      transcript: Array.isArray(res.transcript) ? res.transcript : [],
+      lesson_notes: res.lesson_notes || '',
+      code_snippet: res.code_snippet || '',
+      code_language: res.code_language || 'python',
+      status: (res.status || 'active') as 'active' | 'inactive',
+      created_at: res.created_at ? res.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      comments_count: res.comments_count || 0,
     };
   },
 
@@ -994,225 +1139,6 @@ export const api = {
         submissions: [].length
       };
     }
-  },
-
-  /**
-   * SkilTrix Company Mocks APIs
-   */
-  async getCompanyMocks(): Promise<CompanyMockItem[]> {
-    const result = await fetchWithFallback<any>(
-      '/apps/skiltrix/api/assessments/',
-      { method: 'GET' },
-      []
-    );
-
-    const list = Array.isArray(result) ? result : (result?.results || []);
-    if (Array.isArray(list) && list.length > 0) {
-      return list.map((item: any) => ({
-        id: item.id,
-        assessment_id: item.assessment_id || `asmt_${item.slug}`,
-        title: item.title,
-        slug: item.slug,
-        category: item.category || 'Company Mocks',
-        company_tag: item.company_tag || 'General SDE',
-        description: item.description || '',
-        difficulty: item.difficulty || 'Medium',
-        duration_minutes: item.duration_minutes || 90,
-        pass_percentage: item.pass_percentage || 70,
-        total_marks: item.total_marks || 100,
-        is_company_mock: item.is_company_mock ?? true,
-        is_pro_only: item.is_pro_only ?? false,
-        proctoring_enabled: item.proctoring_enabled ?? true,
-        active: item.active ?? true,
-        sections_count: item.section_count || item.sections?.length || 0,
-        questions_count: item.question_count || item.questions_count || 0,
-        created_at: item.created_at ? item.created_at.split('T')[0] : '2026-10-01'
-      }));
-    }
-    return [];
-  },
-
-  async createCompanyMock(data: Partial<CompanyMockItem>): Promise<CompanyMockItem> {
-    const title = data.title || 'Company Mock Assessment';
-    const payload = {
-      assessment_id: data.assessment_id || `asmt_mock_${Date.now()}`,
-      title,
-      slug: data.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      category: data.category || 'Company Mocks',
-      company_tag: data.company_tag || 'General SDE',
-      description: data.description || '',
-      difficulty: (data.difficulty || 'Medium') as 'Easy' | 'Medium' | 'Hard',
-      duration_minutes: Number(data.duration_minutes) || 90,
-      pass_percentage: Number(data.pass_percentage) || 70,
-      total_marks: Number(data.total_marks) || 100,
-      is_company_mock: true,
-      is_pro_only: Boolean(data.is_pro_only),
-      proctoring_enabled: Boolean(data.proctoring_enabled ?? true),
-      active: Boolean(data.active ?? true),
-    };
-
-    const res = await fetchWithFallback<any>(
-      '/apps/skiltrix/api/assessments/',
-      {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      },
-      null
-    );
-
-    if (res && res.assessment_id) {
-      return {
-        ...payload,
-        id: res.id,
-        sections_count: 0,
-        questions_count: 0,
-      };
-    }
-
-    return {
-      ...payload,
-      id: Date.now(),
-      sections_count: 0,
-      questions_count: 0,
-    };
-  },
-
-  async deleteCompanyMock(id: string | number): Promise<boolean> {
-    return await fetchWithFallback<boolean>(
-      `/apps/skiltrix/api/assessments/${id}/`,
-      { method: 'DELETE' },
-      true
-    );
-  },
-
-  /**
-   * SkilTrix Company Blueprints APIs
-   */
-  async getCompanyBlueprints(): Promise<CompanyBlueprintItem[]> {
-    const result = await fetchWithFallback<any>(
-      '/apps/skiltrix/api/blueprints/',
-      { method: 'GET' },
-      []
-    );
-
-    const list = Array.isArray(result) ? result : (result?.results || []);
-    if (Array.isArray(list) && list.length > 0) {
-      return list.map((item: any) => ({
-        id: item.id,
-        blueprint_id: item.blueprint_id || item.slug,
-        company_name: item.company_name,
-        slug: item.slug,
-        description: item.description || '',
-        category: item.category || 'Company Mocks',
-        sections_config: Array.isArray(item.sections_config) ? item.sections_config : [],
-        recommended_topics: Array.isArray(item.recommended_topics) ? item.recommended_topics : [],
-        duration_minutes: item.duration_minutes || 90,
-        tier: (item.tier || 'free') as 'free' | 'pro',
-        icon_name: item.icon_name || 'briefcase',
-        is_active: item.is_active ?? true,
-        created_at: item.created_at ? item.created_at.split('T')[0] : '2026-10-01',
-        mock_linked: true
-      }));
-    }
-    return [];
-  },
-
-  async createCompanyBlueprint(data: Partial<CompanyBlueprintItem>): Promise<CompanyBlueprintItem> {
-    const company_name = data.company_name || 'Company Blueprint';
-    const payload = {
-      blueprint_id: data.blueprint_id || `bp_${data.slug || Date.now()}`,
-      company_name,
-      slug: data.slug || company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      description: data.description || '',
-      category: data.category || 'Company Mocks',
-      sections_config: data.sections_config || [],
-      recommended_topics: data.recommended_topics || ['DSA', 'CS Fundamentals'],
-      duration_minutes: Number(data.duration_minutes) || 90,
-      tier: (data.tier || 'free') as 'free' | 'pro',
-      icon_name: data.icon_name || 'briefcase',
-      is_active: Boolean(data.is_active ?? true)
-    };
-
-    const res = await fetchWithFallback<any>(
-      '/apps/skiltrix/api/blueprints/',
-      {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      },
-      null
-    );
-
-    if (res && res.blueprint_id) {
-      return { ...payload, id: res.id, mock_linked: false };
-    }
-
-    return { ...payload, id: Date.now(), mock_linked: false };
-  },
-
-  async deleteCompanyBlueprint(id: string | number): Promise<boolean> {
-    return await fetchWithFallback<boolean>(
-      `/apps/skiltrix/api/blueprints/${id}/`,
-      { method: 'DELETE' },
-      true
-    );
-  },
-
-  async updateCompanyMock(id: string | number, data: Partial<CompanyMockItem>): Promise<CompanyMockItem> {
-    const res = await fetchWithFallback<any>(
-      `/apps/skiltrix/api/assessments/${id}/`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      },
-      data as any
-    );
-    return res as CompanyMockItem;
-  },
-
-  async getMockQuestions(assessmentId: string | number): Promise<QuestionItem[]> {
-    const res = await fetchWithFallback<any>(
-      `/apps/skiltrix/api/assessments/${assessmentId}/questions/`,
-      { method: 'GET' },
-      []
-    );
-    return Array.isArray(res) ? res : (res?.results || []);
-  },
-
-  async addMockQuestion(assessmentId: string | number, data: Partial<QuestionItem>): Promise<QuestionItem> {
-    const res = await fetchWithFallback<any>(
-      `/apps/skiltrix/api/assessments/${assessmentId}/add_question/`,
-      {
-        method: 'POST',
-        body: JSON.stringify(data)
-      },
-      {
-        item_id: `q_${Date.now()}`,
-        title: data.title || 'New Question',
-        marks: data.marks || 10,
-        prompt: data.prompt || '',
-        question_type: data.question_type || 'mcq_single',
-        order: 1,
-        ...data
-      } as any
-    );
-    return res as QuestionItem;
-  },
-
-  async deleteQuestion(itemId: string | number): Promise<boolean> {
-    return await fetchWithFallback<boolean>(
-      `/apps/skiltrix/api/questions/${itemId}/`,
-      { method: 'DELETE' },
-      true
-    );
-  },
-
-  async getMockSections(assessmentId: string | number): Promise<AssessmentSectionItem[]> {
-    const res = await fetchWithFallback<any>(
-      `/apps/skiltrix/api/sections/?assessment_id=${assessmentId}`,
-      { method: 'GET' },
-      []
-    );
-    return Array.isArray(res) ? res : (res?.results || []);
   },
 
   async getContactSubmissions(params?: {

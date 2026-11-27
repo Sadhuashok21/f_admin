@@ -10,12 +10,44 @@ import {
   Send,
   Video as VideoIcon,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react';
-import { Video, Course, VideoComment } from '../../types';
+import { Video, Course, VideoComment, VideoChapter } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { api } from '../../services/api';
 import { validateAdminUploadSize, formatFileSize } from '../../utils/uploadLimit';
+
+const formatMmSs = (sec: number): string => {
+  const safe = Math.max(0, Math.floor(Number(sec) || 0));
+  const mins = Math.floor(safe / 60);
+  const rem = safe % 60;
+  return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+};
+
+const parseMmSs = (val: string): number => {
+  const clean = val.trim();
+  if (!clean) return 0;
+  if (clean.includes(':')) {
+    const parts = clean.split(':').map(Number);
+    if (parts.length === 2 && !parts.some(Number.isNaN)) {
+      return Math.max(0, parts[0] * 60 + parts[1]);
+    }
+    if (parts.length === 3 && !parts.some(Number.isNaN)) {
+      return Math.max(0, parts[0] * 3600 + parts[1] * 60 + parts[2]);
+    }
+  }
+  const num = Number(clean);
+  return Number.isNaN(num) ? 0 : Math.max(0, Math.floor(num));
+};
+
+type DraftChapterRow = { timeInput: string; title: string };
+
+const toVideoChapters = (rows: DraftChapterRow[]): VideoChapter[] =>
+  rows
+    .filter(r => r.title.trim())
+    .map(r => ({ time: parseMmSs(r.timeInput), title: r.title.trim() }))
+    .sort((a, b) => a.time - b.time);
 
 export const SkiltrixVideosPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -34,9 +66,20 @@ export const SkiltrixVideosPage: React.FC = () => {
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [createChapterRows, setCreateChapterRows] = useState<DraftChapterRow[]>([]);
 
   // Video Player Modal state
   const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+
+  // Timeline Chapters & Lesson Content Modal state
+  const [editingTimelineVideo, setEditingTimelineVideo] = useState<Video | null>(null);
+  const [timelineRows, setTimelineRows] = useState<DraftChapterRow[]>([]);
+  const [transcriptRows, setTranscriptRows] = useState<DraftChapterRow[]>([]);
+  const [lessonNotesDraft, setLessonNotesDraft] = useState('');
+  const [codeLangDraft, setCodeLangDraft] = useState('python');
+  const [codeSnippetDraft, setCodeSnippetDraft] = useState('');
+  const [savingTimeline, setSavingTimeline] = useState(false);
+  const [timelineError, setTimelineError] = useState('');
 
   // Comments Modal state
   const [activeCommentsVideo, setActiveCommentsVideo] = useState<Video | null>(null);
@@ -141,7 +184,8 @@ export const SkiltrixVideosPage: React.FC = () => {
         description,
         course_id: courseId,
         video: videoUploadRes.filename || videoUploadRes.url,
-        image: imageFilename
+        image: imageFilename,
+        chapters: toVideoChapters(createChapterRows),
       });
 
       setUploadProgress(100);
@@ -156,6 +200,7 @@ export const SkiltrixVideosPage: React.FC = () => {
         setVideoFile(null);
         setImageFile(null);
         setImagePreview('');
+        setCreateChapterRows([]);
         setUploadProgress(0);
         setUploadStatusText('');
       }, 400);
@@ -178,6 +223,126 @@ export const SkiltrixVideosPage: React.FC = () => {
       }
     }
   };
+
+  const handleOpenTimeline = (video: Video) => {
+    setEditingTimelineVideo(video);
+    setTimelineError('');
+    const existing = Array.isArray(video.chapters) ? video.chapters : [];
+    setTimelineRows(
+      existing.length > 0
+        ? existing.map(ch => ({ timeInput: formatMmSs(ch.time), title: ch.title }))
+        : []
+    );
+    const existingTranscript = Array.isArray(video.transcript) ? video.transcript : [];
+    setTranscriptRows(
+      existingTranscript.length > 0
+        ? existingTranscript.map(tr => ({ timeInput: formatMmSs(tr.start), title: tr.text }))
+        : []
+    );
+    setLessonNotesDraft(video.lesson_notes || '');
+    setCodeLangDraft(video.code_language || 'python');
+    setCodeSnippetDraft(video.code_snippet || '');
+  };
+
+  const handleSaveTimeline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTimelineVideo) return;
+    setSavingTimeline(true);
+    setTimelineError('');
+    try {
+      const cleaned = toVideoChapters(timelineRows);
+      const cleanedTranscript = toVideoChapters(transcriptRows).map(c => ({
+        start: c.time,
+        end: c.time + 10,
+        text: c.title,
+      }));
+      const updated = await api.updateVideo(editingTimelineVideo.video_id, {
+        chapters: cleaned,
+        transcript: cleanedTranscript,
+        lesson_notes: lessonNotesDraft,
+        code_snippet: codeSnippetDraft,
+        code_language: codeLangDraft,
+      });
+      setVideos(prev =>
+        prev.map(v =>
+          v.video_id === editingTimelineVideo.video_id
+            ? {
+                ...v,
+                chapters: updated.chapters ?? cleaned,
+                transcript: updated.transcript ?? cleanedTranscript,
+                lesson_notes: updated.lesson_notes ?? lessonNotesDraft,
+                code_snippet: updated.code_snippet ?? codeSnippetDraft,
+                code_language: updated.code_language ?? codeLangDraft,
+              }
+            : v
+        )
+      );
+      setEditingTimelineVideo(null);
+    } catch (err: any) {
+      setTimelineError(err?.message || 'Failed to save lesson content.');
+    } finally {
+      setSavingTimeline(false);
+    }
+  };
+
+  const renderChapterEditor = (
+    rows: DraftChapterRow[],
+    setRows: React.Dispatch<React.SetStateAction<DraftChapterRow[]>>,
+    disabled = false
+  ) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {rows.length === 0 ? (
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+          No timeline chapters added yet. Leave empty or click &quot;Add Milestone&quot;.
+        </p>
+      ) : (
+        rows.map((row, idx) => (
+          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '110px 1fr auto', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="00:00"
+              value={row.timeInput}
+              disabled={disabled}
+              onChange={e =>
+                setRows(prev => prev.map((r, i) => (i === idx ? { ...r, timeInput: e.target.value } : r)))
+              }
+            />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Milestone title (e.g. Overview & Setup)"
+              value={row.title}
+              disabled={disabled}
+              onChange={e =>
+                setRows(prev => prev.map((r, i) => (i === idx ? { ...r, title: e.target.value } : r)))
+              }
+            />
+            <button
+              type="button"
+              className="action-btn delete"
+              disabled={disabled}
+              title="Remove Milestone"
+              onClick={() => setRows(prev => prev.filter((_, i) => i !== idx))}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))
+      )}
+      <div>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          disabled={disabled}
+          onClick={() => setRows(prev => [...prev, { timeInput: prev.length === 0 ? '00:00' : '01:00', title: '' }])}
+        >
+          <Plus size={14} />
+          <span>Add Milestone</span>
+        </button>
+      </div>
+    </div>
+  );
 
   // Comments Modal Handlers
   const handleOpenComments = async (video: Video) => {
@@ -378,7 +543,16 @@ export const SkiltrixVideosPage: React.FC = () => {
                       <span className={`badge badge-${video.status}`}>{video.status}</span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                      <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '4px 9px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => handleOpenTimeline(video)}
+                          title="Set or edit Timeline Chapters"
+                        >
+                          <Clock size={13} />
+                          <span>{(video.chapters?.length || 0) > 0 ? `${video.chapters?.length} Chapters` : 'Set Timeline'}</span>
+                        </button>
                         <button
                           className="action-btn"
                           onClick={() => setPlayingVideo(video)}
@@ -514,6 +688,11 @@ export const SkiltrixVideosPage: React.FC = () => {
             />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">Timeline Chapters (Optional — format MM:SS)</label>
+            {renderChapterEditor(createChapterRows, setCreateChapterRows, isUploading)}
+          </div>
+
           {isUploading && (
             <div style={{ margin: '1.25rem 0', background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '6px', fontWeight: 500 }}>
@@ -576,6 +755,91 @@ export const SkiltrixVideosPage: React.FC = () => {
               </p>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Timeline Chapters & Lesson Content Modal */}
+      {editingTimelineVideo && (
+        <Modal
+          isOpen={!!editingTimelineVideo}
+          onClose={() => !savingTimeline && setEditingTimelineVideo(null)}
+          title={`Timeline, Transcript & Notes — ${editingTimelineVideo.title}`}
+        >
+          <form onSubmit={handleSaveTimeline} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '72vh', overflowY: 'auto' }}>
+            {timelineError && (
+              <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.7rem 0.9rem', borderRadius: '8px', fontSize: '0.84rem' }}>
+                {timelineError}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Timeline Chapters (MM:SS)</label>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 6px 0' }}>
+                Add lesson milestone timestamps (e.g. <code>00:00</code>, <code>03:15</code>).
+              </p>
+              {renderChapterEditor(timelineRows, setTimelineRows, savingTimeline)}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Subtitles Transcript Cues (MM:SS)</label>
+              {renderChapterEditor(transcriptRows, setTranscriptRows, savingTimeline)}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Lesson Notes &amp; Key Takeaways</label>
+              <textarea
+                rows={4}
+                className="form-textarea"
+                placeholder="Write lesson summary notes and takeaways..."
+                value={lessonNotesDraft}
+                disabled={savingTimeline}
+                onChange={e => setLessonNotesDraft(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" style={{ margin: 0 }}>Lesson Code Example</label>
+                <select
+                  className="form-select"
+                  style={{ width: '140px', padding: '0.25rem 0.5rem' }}
+                  value={codeLangDraft}
+                  disabled={savingTimeline}
+                  onChange={e => setCodeLangDraft(e.target.value)}
+                >
+                  <option value="python">Python</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="java">Java</option>
+                  <option value="cpp">C++</option>
+                  <option value="c">C</option>
+                </select>
+              </div>
+              <textarea
+                rows={4}
+                className="form-textarea"
+                style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}
+                placeholder="Optional runnable code snippet for the Try the Code tab..."
+                value={codeSnippetDraft}
+                disabled={savingTimeline}
+                onChange={e => setCodeSnippetDraft(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={savingTimeline}
+                onClick={() => setEditingTimelineVideo(null)}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={savingTimeline}>
+                <Clock size={15} />
+                <span>{savingTimeline ? 'Saving...' : 'Save Lesson Content'}</span>
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
 
